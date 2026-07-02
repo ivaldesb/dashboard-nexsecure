@@ -1,0 +1,163 @@
+{% extends "base_site.html" %}
+
+{% block title %}Plantillas de Recordatorios{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-file-text"></i> Plantillas de Recordatorios</h3>
+        </div>
+        <div class="title_right">
+          <button class="btn btn-success" data-toggle="modal" data-target="#modalNuevaPlantilla">
+            <i class="fa fa-plus"></i> Nueva Plantilla
+          </button>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Plantillas Disponibles</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <table class="table table-striped table-bordered">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Canal</th>
+                    <th>Asunto</th>
+                    <th>Usos</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for plantilla in plantillas %}
+                  <tr>
+                    <td>{{ plantilla.nombre }}</td>
+                    <td><span class="label label-info">{{ plantilla.tipo }}</span></td>
+                    <td>
+                      {% if plantilla.canal == 'whatsapp' %}
+                        <span class="label label-success"><i class="fa fa-whatsapp"></i> WhatsApp</span>
+                      {% elif plantilla.canal == 'email' %}
+                        <span class="label label-primary"><i class="fa fa-envelope"></i> Email</span>
+                      {% else %}
+                        <span class="label label-default">{{ plantilla.canal }}</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ plantilla.asunto or '-' }}</td>
+                    <td><span class="badge">{{ plantilla.uso_count }}</span></td>
+                    <td>
+                      {% if plantilla.activa %}
+                        <span class="label label-success">Activa</span>
+                      {% else %}
+                        <span class="label label-default">Inactiva</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <button class="btn btn-xs btn-info" onclick="verPlantilla({{ plantilla.id }})">
+                        <i class="fa fa-eye"></i>
+                      </button>
+                      <button class="btn btn-xs btn-warning" onclick="editarPlantilla({{ plantilla.id }})">
+                        <i class="fa fa-edit"></i>
+                      </button>
+                      <button class="btn btn-xs btn-success" onclick="usarPlantilla({{ plantilla.id }})">
+                        <i class="fa fa-check"></i> Usar
+                      </button>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="7" class="text-center text-muted">No hay plantillas creadas</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nueva Plantilla -->
+  <div class="modal fade" id="modalNuevaPlantilla" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Nueva Plantilla</h4>
+        </div>
+        <form method="POST" action="/marketing/recordatorios/plantillas/nueva">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Nombre de la Plantilla *</label>
+              <input type="text" name="nombre" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Tipo *</label>
+              <select name="tipo" class="form-control" required>
+                <option value="">Seleccione...</option>
+                <option value="cita">Recordatorio de Cita</option>
+                <option value="pago">Recordatorio de Pago</option>
+                <option value="cumpleanos">Cumpleaños</option>
+                <option value="promocion">Promoción</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Canal *</label>
+              <select name="canal" class="form-control" required>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="email">Email</option>
+                <option value="sms">SMS</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Asunto (para Email)</label>
+              <input type="text" name="asunto" class="form-control">
+            </div>
+            <div class="form-group">
+              <label>Contenido * <small>(Usa variables dinámicas: {nombre_cliente}, {fecha}, etc.)</small></label>
+              <textarea name="contenido" class="form-control" rows="8" required></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success">Crear Plantilla</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+  <script>
+    function verPlantilla(id) {
+      // Implementar ver plantilla
+      alert('Función en desarrollo');
+    }
+    function editarPlantilla(id) {
+      // Implementar editar plantilla
+      alert('Función en desarrollo');
+    }
+    function usarPlantilla(id) {
+      // Redirigir a crear recordatorio con plantilla
+      window.location.href = '/marketing/recordatorios?plantilla_id=' + id;
+    }
+  </script>
+{% endblock javascripts %}
+

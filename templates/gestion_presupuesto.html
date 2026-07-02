@@ -1,0 +1,1813 @@
+{% extends "base_site.html" %}
+
+{% block title %} Gestión de Presupuesto {% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <style>
+    .costo-section { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px; }
+    .resumen-box { background: #e8f4f8; padding: 15px; border-radius: 5px; margin-top: 20px; }
+    .resumen-box h4 { margin-top: 0; color: #2c3e50; }
+    .pago-empleado-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .pago-empleado-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important; }
+  </style>
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3>Gestión de Presupuesto <small>{{ proyecto.nombre }}</small></h3>
+        </div>
+        <div class="title_right">
+          <a href="/presupuestos" class="btn btn-default">
+            <i class="fa fa-arrow-left"></i> Volver a Presupuestos
+          </a>
+          <a href="/project_detail?id={{ proyecto.id }}" class="btn btn-info">
+            <i class="fa fa-eye"></i> Ver Proyecto
+          </a>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <!-- Información del Presupuesto -->
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Información del Presupuesto</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <div class="row">
+                <div class="col-md-6">
+                  <p><strong>N° Presupuesto:</strong> {{ presupuesto.numero_presupuesto or '---' }}</p>
+                  <p><strong>Fecha:</strong> {{ presupuesto.fecha }}</p>
+                  <p><strong>Obra:</strong> {{ presupuesto.obra or '---' }}</p>
+                  <p><strong>Tipo:</strong> 
+                    <span class="label label-{% if presupuesto.tipo_presupuesto == 'principal' %}primary{% else %}info{% endif %}">
+                      {{ presupuesto.tipo_presupuesto|title if presupuesto.tipo_presupuesto else 'Principal' }}
+                    </span>
+                  </p>
+                </div>
+                <div class="col-md-6">
+                  <p><strong>Cliente:</strong> {{ presupuesto.cliente_nombre or '---' }}</p>
+                  <p><strong>Email:</strong> {{ presupuesto.cliente_email or '---' }}</p>
+                  <p><strong>Teléfono:</strong> {{ presupuesto.cliente_telefono or '---' }}</p>
+                  <p><strong>% Empresa:</strong> 
+                    <input type="number" id="porcentaje_empresa_input" value="{{ porcentaje_empresa }}" step="0.01" min="0" max="100" style="width: 80px; display: inline-block;" class="form-control">
+                    <button class="btn btn-xs btn-primary" id="btnSavePorcentajeEmpresa" style="margin-left: 5px;">
+                      <i class="fa fa-save"></i> Guardar
+                    </button>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Presupuestos Secundarios -->
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Presupuestos Secundarios</h2>
+              <ul class="nav navbar-right panel_toolbox">
+                <li>
+                  <button class="btn btn-success btn-xs" id="btnCrearPresupuestoSecundario">
+                    <i class="fa fa-plus"></i> Crear Presupuesto Secundario
+                  </button>
+                </li>
+              </ul>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              {% if presupuestos_secundarios and presupuestos_secundarios|length > 0 %}
+              <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                  <thead>
+                    <tr>
+                      <th>N° Presupuesto</th>
+                      <th>Fecha</th>
+                      <th>Vínculo</th>
+                      <th>Descripción</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for presup_sec in presupuestos_secundarios %}
+                    <tr>
+                      <td>{{ presup_sec.numero_presupuesto or '---' }}</td>
+                      <td>{{ presup_sec.fecha.strftime('%d-%m-%Y') if presup_sec.fecha else '---' }}</td>
+                      <td>
+                        {% if presup_sec.incidencia_id %}
+                          <span class="label label-warning" title="{% if presup_sec.incidencia_info %}{{ presup_sec.incidencia_info.titulo }}{% endif %}">
+                            <i class="fa fa-exclamation-triangle"></i> Incidencia #{{ presup_sec.incidencia_id }}
+                            {% if presup_sec.incidencia_info %}
+                              - {{ presup_sec.incidencia_info.titulo }}
+                            {% endif %}
+                          </span>
+                        {% elif presup_sec.visita_mantenimiento_id %}
+                          <span class="label label-info" title="{% if presup_sec.visita_info %}Visita {{ presup_sec.visita_info.tipo_visita }} del {{ presup_sec.visita_info.fecha_visita }}{% endif %}">
+                            <i class="fa fa-calendar"></i> Visita {{ presup_sec.visita_info.tipo_visita|title if presup_sec.visita_info else '' }} #{{ presup_sec.visita_mantenimiento_id }}
+                            {% if presup_sec.visita_info %}
+                              - {{ presup_sec.visita_info.fecha_visita }}
+                            {% endif %}
+                          </span>
+                        {% else %}
+                          <span class="text-muted">Sin vínculo</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ presup_sec.generalidades or '---' }}</td>
+                      <td>
+                        <a href="/presupuesto/{{ presup_sec.id }}/gestion" class="btn btn-primary btn-xs">
+                          <i class="fa fa-cog"></i> Gestionar
+                        </a>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <p class="text-muted">No hay presupuestos secundarios creados. Los presupuestos secundarios se utilizan para materiales adicionales detectados en visitas de mantenimiento o para resolver incidencias.</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Items del Presupuesto con Costos -->
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Items del Presupuesto</h2>
+              <ul class="nav navbar-right panel_toolbox">
+                <li>
+                  <button class="btn btn-success btn-xs" id="btnAgregarItem">
+                    <i class="fa fa-plus"></i> Agregar Item
+                  </button>
+                </li>
+              </ul>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Referencia</th>
+                      <th>Cantidad</th>
+                      <th>Ubicación</th>
+                      <th>Tipología</th>
+                      <th>Insumos</th>
+                      <th>Maquila</th>
+                      <th>Instalación</th>
+                      <th>Desinstalación</th>
+                      <th>Materiales</th>
+                      <th>Gastos Gen.</th>
+                      <th>Utilidad %</th>
+                      <th>Flete</th>
+                      <th>Valor Unit.</th>
+                      <th>Total</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="itemsTableBody">
+                    {% for item in items %}
+                    <tr data-item-id="{{ item.id }}">
+                      <td>{{ item.referencia or '' }}</td>
+                      <td class="cantidad-cell" data-cantidad="{{ item.cantidad }}">{{ item.cantidad }}</td>
+                      <td>{{ item.ubicacion or '' }}</td>
+                      <td>{{ item.tipologia or '' }}</td>
+                      <td class="costo-insumos">$ {{ "{:,.0f}".format(item.costo.insumos if item.costo else 0) }}</td>
+                      <td class="costo-maquila">$ {{ "{:,.0f}".format(item.costo.maquila if item.costo else 0) }}</td>
+                      <td class="costo-instalacion">$ {{ "{:,.0f}".format(item.costo.instalacion if item.costo else 0) }}</td>
+                      <td class="costo-desinstalacion">$ {{ "{:,.0f}".format(item.costo.desinstalacion if item.costo else 0) }}</td>
+                      <td class="costo-materiales">$ {{ "{:,.0f}".format(item.costo.materiales_ferreteria if item.costo else 0) }}</td>
+                      <td class="costo-gastos">$ {{ "{:,.0f}".format(item.costo.gastos_generales if item.costo else 0) }}</td>
+                      <td class="costo-utilidad">{{ item.costo.utilidad_porcentaje if item.costo else 0 }}%</td>
+                      <td class="costo-flete">$ {{ "{:,.0f}".format(item.costo.flete if item.costo else 0) }}</td>
+                      <td class="valor-unitario-cell" data-valor="{{ item.valor_unitario }}">$ {{ "{:,.0f}".format(item.valor_unitario) }}</td>
+                      <td class="importe-total-cell">$ {{ "{:,.0f}".format(item.importe_total) }}</td>
+                      <td>
+                        <button class="btn btn-xs btn-info btn-edit-item" data-item-id="{{ item.id }}" title="Editar item">
+                          <i class="fa fa-pencil"></i> Editar
+                        </button>
+                        <button class="btn btn-xs btn-primary btn-edit-costo" data-item-id="{{ item.id }}" title="Editar costos">
+                          <i class="fa fa-edit"></i> Costos
+                        </button>
+                        <button class="btn btn-xs btn-danger btn-delete-item" data-item-id="{{ item.id }}" title="Eliminar">
+                          <i class="fa fa-trash"></i> Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Facturas/Boletas -->
+          <div class="x_panel">
+            <div class="x_title">
+              <h2><i class="fa fa-file-text"></i> Facturas y Boletas</h2>
+              <ul class="nav navbar-right panel_toolbox">
+                <li>
+                  <button class="btn btn-info btn-xs" data-toggle="modal" data-target="#modalUploadFactura">
+                    <i class="fa fa-upload"></i> Subir Factura/Boleta
+                  </button>
+                </li>
+              </ul>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <table class="table table-striped table-bordered">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Número</th>
+                    <th>Proveedor</th>
+                    <th>Fecha Emisión</th>
+                    <th>Neto</th>
+                    <th>IVA</th>
+                    <th>Total</th>
+                    <th>Gastos Vinculados</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="facturasTableBody">
+                  {% for factura in facturas %}
+                  <tr data-factura-id="{{ factura.id }}" data-factura-iva="{{ factura.iva }}">
+                    <td>{{ 'Factura' if factura.tipo_documento == 'factura' else 'Boleta' }}</td>
+                    <td>{{ factura.numero_documento or 'N/A' }}</td>
+                    <td>{{ factura.proveedor or 'N/A' }}</td>
+                    <td>{{ factura.fecha_emision or 'N/A' }}</td>
+                    <td>$ {{ "{:,.0f}".format(factura.neto) }}</td>
+                    <td>$ {{ "{:,.0f}".format(factura.iva) }}</td>
+                    <td>$ {{ "{:,.0f}".format(factura.total) }}</td>
+                    <td><span class="badge" id="gastos-count-{{ factura.id }}">0</span></td>
+                    <td>
+                      <button class="btn btn-xs btn-primary btn-view-factura" data-factura-id="{{ factura.id }}" title="Ver detalles">
+                        <i class="fa fa-eye"></i> Ver
+                      </button>
+                      <button class="btn btn-xs btn-warning btn-edit-factura" data-factura-id="{{ factura.id }}" title="Editar">
+                        <i class="fa fa-edit"></i> Editar
+                      </button>
+                      <button class="btn btn-xs btn-danger btn-delete-factura" data-factura-id="{{ factura.id }}" title="Eliminar">
+                        <i class="fa fa-trash"></i> Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Gastos del Proyecto -->
+          <div class="x_panel">
+            <div class="x_title">
+              <h2><i class="fa fa-money"></i> Gastos del Proyecto
+                {% if es_mantenimiento_o_ciclo %}
+                  <small style="color: #26B99A;">(Vista Mensual)</small>
+                {% endif %}
+              </h2>
+              <ul class="nav navbar-right panel_toolbox">
+                <li>
+                  <button class="btn btn-success btn-xs" data-toggle="modal" data-target="#modalAddGasto">
+                    <i class="fa fa-plus"></i> Agregar Gasto
+                  </button>
+                </li>
+              </ul>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content" 
+                 id="gastosContainer"
+                 data-es-mantenimiento="{{ 'true' if es_mantenimiento_o_ciclo else 'false' }}"
+                 data-total-items="{{ total_items }}"
+                 data-neto="{{ neto }}"
+                 data-descuento="{{ presupuesto.descuento }}"
+                 data-iva="{{ presupuesto.iva }}"
+                 data-iva-monto="{{ iva_monto }}"
+                 data-total-proyecto="{{ total_proyecto }}"
+                 data-porcentaje-empresa="{{ presupuesto.porcentaje_empresa }}"
+                 data-anticipos-empresa="{{ anticipos_empresa }}">
+              {% if es_mantenimiento_o_ciclo and gastos_por_mes %}
+                <!-- Vista agrupada por mes para proyectos de mantenimiento o con ciclo de pago -->
+                <div class="panel-group" id="accordionGastosMensuales" role="tablist">
+                  {% for mes_clave, datos_mes in gastos_por_mes.items() %}
+                  <div class="panel panel-default" style="margin-bottom: 15px;">
+                    <div class="panel-heading" role="tab" style="background-color: #f8f9fa;">
+                      <h4 class="panel-title">
+                        <a role="button" data-toggle="collapse" data-parent="#accordionGastosMensuales" href="#collapseMes{{ loop.index }}" 
+                           aria-expanded="{% if loop.first %}true{% else %}false{% endif %}"
+                           class="mes-collapse-link"
+                           data-mes-clave="{{ mes_clave }}"
+                           data-total-gastos-mes="{{ datos_mes.total }}"
+                           data-total-empresa-mes="{{ datos_mes.total_empresa }}"
+                           data-total-caja-mes="{{ datos_mes.total_caja }}">
+                          <i class="fa fa-calendar"></i> <strong>{{ datos_mes.mes_nombre }}</strong>
+                          <span class="pull-right">
+                            <span class="badge" style="background-color: #337ab7; font-size: 14px;">
+                              Total: $ {{ "{:,.0f}".format(datos_mes.total) }}
+                            </span>
+                          </span>
+                        </a>
+                      </h4>
+                    </div>
+                    <div id="collapseMes{{ loop.index }}" class="panel-collapse collapse {% if loop.first %}in{% endif %}" role="tabpanel" data-mes-clave="{{ mes_clave }}">
+                      <div class="panel-body">
+                        <table class="table table-striped table-bordered table-hover">
+                          <thead>
+                            <tr>
+                              <th>Descripción</th>
+                              <th>Monto</th>
+                              <th>Tipo</th>
+                              <th>Pagado por</th>
+                              <th>Factura/Boleta</th>
+                              <th>Fecha</th>
+                              <th>Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for gasto in datos_mes.gastos %}
+                            <tr data-gasto-id="{{ gasto.id }}" data-monto="{{ gasto.monto }}" data-pagado-por-id="{{ gasto.pagado_por_id if gasto.pagado_por_id else '' }}">
+                              <td>{{ gasto.descripcion }}</td>
+                              <td>$ {{ "{:,.0f}".format(gasto.monto) }}</td>
+                              <td>{{ gasto.tipo }}</td>
+                              <td>
+                                {% if gasto.pagado_por_id == 'empresa' %}
+                                  <i class="fa fa-building"></i> Empresa
+                                {% elif gasto.pagado_por_id %}
+                                  <i class="fa fa-user"></i> {{ gasto.pagado_por_nombre or 'Empleado' }}
+                                {% else %}
+                                  <i class="fa fa-wallet"></i> Caja del Proyecto
+                                {% endif %}
+                              </td>
+                              <td id="gasto-factura-{{ gasto.id }}">
+                                {% if gasto.factura_id and gasto.factura_info %}
+                                  <span class="badge bg-blue" title="{{ gasto.factura_info.tipo }} {{ gasto.factura_info.numero }} - {{ gasto.factura_info.proveedor }}">
+                                    {{ gasto.factura_info.tipo }} {{ gasto.factura_info.numero }}
+                                  </span>
+                                {% else %}
+                                  <span class="badge bg-gray">Sin vincular</span>
+                                {% endif %}
+                              </td>
+                              <td>{{ gasto.fecha or '---' }}</td>
+                              <td>
+                                <button class="btn btn-xs btn-primary btn-edit-gasto" data-gasto-id="{{ gasto.id }}" title="Editar">
+                                  <i class="fa fa-edit"></i>
+                                </button>
+                                <button class="btn btn-xs btn-danger btn-delete-gasto" data-gasto-id="{{ gasto.id }}" title="Eliminar">
+                                  <i class="fa fa-trash"></i>
+                                </button>
+                              </td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                          <tfoot style="background-color: #f5f5f5;">
+                            <tr>
+                              <th colspan="6" style="text-align: right;">Resumen del Mes:</th>
+                              <th></th>
+                            </tr>
+                            <tr>
+                              <td colspan="3" style="text-align: right;"><strong>Total Caja del Proyecto:</strong></td>
+                              <td><strong>$ {{ "{:,.0f}".format(datos_mes.total_caja) }}</strong></td>
+                              <td colspan="3"></td>
+                            </tr>
+                            <tr>
+                              <td colspan="3" style="text-align: right;"><strong>Total Empresa:</strong></td>
+                              <td><strong>$ {{ "{:,.0f}".format(datos_mes.total_empresa) }}</strong></td>
+                              <td colspan="3"></td>
+                            </tr>
+                            {% if datos_mes.total_empleados %}
+                            {% for emp_id, datos_emp in datos_mes.total_empleados.items() %}
+                            {% if datos_emp is mapping %}
+                              {% set emp_nombre = datos_emp.nombre if datos_emp.nombre else ('Empleado ID: ' + emp_id|string) %}
+                              {% set emp_total = datos_emp.total %}
+                            {% else %}
+                              {% set emp_nombre = 'Empleado ID: ' + emp_id|string %}
+                              {% set emp_total = datos_emp %}
+                            {% endif %}
+                            <tr>
+                              <td colspan="3" style="text-align: right;"><strong>Total {{ emp_nombre }}:</strong></td>
+                              <td><strong>$ {{ "{:,.0f}".format(emp_total) }}</strong></td>
+                              <td colspan="3"></td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+                            <tr style="background-color: #e7f3ff; font-weight: bold;">
+                              <td colspan="3" style="text-align: right;"><strong>Total Mes {{ datos_mes.mes_nombre }}:</strong></td>
+                              <td style="font-size: 16px; color: #0056b3;"><strong>$ {{ "{:,.0f}".format(datos_mes.total) }}</strong></td>
+                              <td colspan="3"></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+                
+                <!-- Resumen general de todos los meses -->
+                <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border: 2px solid #dee2e6; border-radius: 8px;">
+                  <h4 style="margin-top: 0; color: #495057;">
+                    <i class="fa fa-chart-bar"></i> Resumen Total de Gastos
+                  </h4>
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div style="text-align: center; padding: 10px;">
+                        <div style="font-size: 24px; font-weight: bold; color: #28a745;">
+                          $ {{ "{:,.0f}".format(total_gastos) }}
+                        </div>
+                        <div style="color: #6c757d; margin-top: 5px;">Total General</div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div style="text-align: center; padding: 10px;">
+                        <div style="font-size: 18px; font-weight: bold; color: #337ab7;">
+                          {{ gastos_por_mes|length }}
+                        </div>
+                        <div style="color: #6c757d; margin-top: 5px;">Meses Registrados</div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div style="text-align: center; padding: 10px;">
+                        <div style="font-size: 18px; font-weight: bold; color: #ff9800;">
+                          $ {{ "{:,.0f}".format(total_gastos / (gastos_por_mes|length) if (gastos_por_mes|length) > 0 else 0) }}
+                        </div>
+                        <div style="color: #6c757d; margin-top: 5px;">Promedio Mensual</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% else %}
+                <!-- Vista normal (sin agrupación mensual) -->
+                <table class="table table-striped table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Descripción</th>
+                      <th>Monto</th>
+                      <th>Tipo</th>
+                      <th>Pagado por</th>
+                      <th>Factura/Boleta</th>
+                      <th>Fecha</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="gastosTableBody">
+                    {% for gasto in gastos %}
+                    <tr data-gasto-id="{{ gasto.id }}" data-monto="{{ gasto.monto }}" data-pagado-por-id="{{ gasto.pagado_por_id if gasto.pagado_por_id else '' }}">
+                      <td>{{ gasto.descripcion }}</td>
+                      <td>$ {{ "{:,.0f}".format(gasto.monto) }}</td>
+                      <td>{{ gasto.tipo }}</td>
+                      <td>
+                        {% if gasto.pagado_por_id == 'empresa' %}
+                          <i class="fa fa-building"></i> Empresa
+                        {% elif gasto.pagado_por_id %}
+                          <i class="fa fa-user"></i> {{ gasto.pagado_por_nombre or 'Empleado' }}
+                        {% else %}
+                          <i class="fa fa-wallet"></i> Caja del Proyecto
+                        {% endif %}
+                      </td>
+                      <td id="gasto-factura-{{ gasto.id }}">
+                        {% if gasto.factura_id and gasto.factura_info %}
+                          <span class="badge bg-blue" title="{{ gasto.factura_info.tipo }} {{ gasto.factura_info.numero }} - {{ gasto.factura_info.proveedor }}">
+                            {{ gasto.factura_info.tipo }} {{ gasto.factura_info.numero }}
+                          </span>
+                        {% else %}
+                          <span class="badge bg-gray">Sin vincular</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ gasto.fecha or '---' }}</td>
+                      <td>
+                        <button class="btn btn-xs btn-primary btn-edit-gasto" data-gasto-id="{{ gasto.id }}" title="Editar">
+                          <i class="fa fa-edit"></i>
+                        </button>
+                        <button class="btn btn-xs btn-danger btn-delete-gasto" data-gasto-id="{{ gasto.id }}" title="Eliminar">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th colspan="1">Total Gastos:</th>
+                      <th id="totalGastos">$ {{ "{:,.0f}".format(total_gastos) }}</th>
+                      <th colspan="4"></th>
+                    </tr>
+                  </tfoot>
+                </table>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Pagos a Empleados -->
+          <div class="x_panel">
+            <div class="x_title">
+              <h2><i class="fa fa-users"></i> Pagos a Empleados</h2>
+              <ul class="nav navbar-right panel_toolbox">
+                <li>
+                  <button class="btn btn-success btn-xs" data-toggle="modal" data-target="#modalAddPagoEmpleado">
+                    <i class="fa fa-plus"></i> Agregar Empleado
+                  </button>
+                </li>
+              </ul>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              {% if pagos_empleados %}
+              <div class="row">
+                {% for pago in pagos_empleados %}
+                <div class="col-md-6" style="margin-bottom: 20px;">
+                  <div class="pago-empleado-card" 
+                       data-pago-id="{{ pago.id }}"
+                       data-porcentaje-pago="{{ pago.porcentaje_pago }}"
+                       data-anticipo="{{ pago.anticipo }}"
+                       data-quien-pago-anticipo-id="{{ pago.quien_pago_anticipo_id if pago.quien_pago_anticipo_id else '' }}"
+                       data-gastos-pagados="{{ pago.gastos_pagados }}"
+                       style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; padding: 20px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                    <div class="row">
+                      <div class="col-md-8">
+                        <h4 style="margin-top: 0; color: white; font-weight: bold;">
+                          <i class="fa fa-user"></i> {{ pago.empleado_nombre }}
+                        </h4>
+                        <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px; margin-top: 10px;">
+                          <p style="margin: 5px 0;"><strong>% Pago:</strong> {{ pago.porcentaje_pago }}%</p>
+                          <p style="margin: 5px 0; font-size: 12px; opacity: 0.9;">
+                            <strong>Por Utilidad:</strong> $ {{ "{:,.0f}".format(pago.pago_por_utilidad) }}
+                          </p>
+                          {% if pago.gastos_pagados > 0 %}
+                          <p style="margin: 5px 0; color: #90EE90;">
+                            <strong><i class="fa fa-plus"></i> Gastos Pagados (a sumar):</strong> $ {{ "{:,.0f}".format(pago.gastos_pagados) }}
+                          </p>
+                          {% endif %}
+                          {% if pago.anticipo > 0 %}
+                          <p style="margin: 5px 0; color: #ffd700;">
+                            <strong><i class="fa fa-minus"></i> Anticipo (a descontar):</strong> $ {{ "{:,.0f}".format(pago.anticipo) }}
+                          </p>
+                          {% if pago.quien_pago_anticipo_id == 'empresa' %}
+                          <p style="margin: 5px 0; font-size: 12px; opacity: 0.9;">
+                            <i class="fa fa-building"></i> Pagado por: Empresa (se suma a diferencia)
+                          </p>
+                          {% elif pago.quien_pago_anticipo_id and pago.quien_pago_anticipo_nombre %}
+                          <p style="margin: 5px 0; font-size: 12px; opacity: 0.9;">
+                            <i class="fa fa-user"></i> Pagado por: {{ pago.quien_pago_anticipo_nombre }} (a devolver)
+                          </p>
+                          {% else %}
+                          <p style="margin: 5px 0; font-size: 12px; opacity: 0.9;">
+                            <i class="fa fa-wallet"></i> Pagado por: Caja del Proyecto (no se devuelve)
+                          </p>
+                          {% endif %}
+                          {% endif %}
+                        </div>
+                      </div>
+                      <div class="col-md-4 text-right">
+                        <div style="background: rgba(255,255,255,0.3); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                          <p style="margin: 0; font-size: 12px; opacity: 0.9;">PAGO TOTAL</p>
+                          <h3 style="margin: 5px 0; color: white; font-weight: bold; font-size: 24px;" class="pago-total">
+                            $ {{ "{:,.0f}".format(pago.pago_total) }}
+                          </h3>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="margin-top: 15px; text-align: right;">
+                      <button class="btn btn-xs btn-light btn-edit-pago" data-pago-id="{{ pago.id }}" data-empleado-id="{{ pago.empleado_id }}" style="margin-right: 5px;">
+                        <i class="fa fa-edit"></i> Editar
+                      </button>
+                      <button class="btn btn-xs btn-danger btn-delete-pago" data-pago-id="{{ pago.id }}">
+                        <i class="fa fa-trash"></i> Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i> No hay empleados asignados. Agrega empleados para asignar pagos.
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Resumen -->
+          <div class="x_panel" id="resumenFinancieroPanel">
+            <div class="x_title">
+              <h2><i class="fa fa-calculator"></i> Resumen Financiero
+                {% if es_mantenimiento_o_ciclo %}
+                  <small id="resumenMesSeleccionado" style="color: #26B99A; font-weight: normal;">(General)</small>
+                {% endif %}
+              </h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content" id="resumenFinancieroContent">
+              <div class="row">
+                <!-- Resumen de Ingresos -->
+                <div class="col-md-6">
+                  <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 10px; padding: 20px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                    <h4 style="margin-top: 0; color: white; font-weight: bold;">
+                      <i class="fa fa-arrow-up"></i> Ingresos del Proyecto
+                    </h4>
+                    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Total Neto:</strong> 
+                        <span style="float: right; font-size: 16px;">$ <span id="resumenNeto">{{ "{:,.0f}".format(neto) }}</span></span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>IVA ({{ iva }}%):</strong> 
+                        <span style="float: right; font-size: 16px;">$ <span id="resumenIva">{{ "{:,.0f}".format(iva_monto) }}</span></span>
+                      </p>
+                      <hr style="border-color: rgba(255,255,255,0.3); margin: 15px 0;">
+                      <p style="margin: 8px 0; font-size: 18px; font-weight: bold;">
+                        <strong>TOTAL PROYECTO:</strong> 
+                        <span style="float: right; font-size: 22px;">$ <span id="resumenTotalProyecto">{{ "{:,.0f}".format(total_proyecto) }}</span></span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Resumen de Distribución -->
+                <div class="col-md-6">
+                  <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 10px; padding: 20px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                    <h4 style="margin-top: 0; color: white; font-weight: bold;">
+                      <i class="fa fa-chart-pie"></i> Distribución de la Utilidad Real
+                    </h4>
+                    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Utilidad Real (Neto - Gastos):</strong> 
+                        <span style="float: right; font-size: 16px;">$ <span id="resumenUtilidadReal">{{ "{:,.0f}".format(utilidad_real) }}</span></span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>% Empresa ({{ porcentaje_empresa }}%):</strong> 
+                        <span style="float: right; font-size: 16px;">$ <span id="resumenMontoEmpresaUtilidad">{{ "{:,.0f}".format(utilidad_empresa) }}</span></span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Gastos pagados por Empresa:</strong> 
+                        <span style="float: right; font-size: 16px;">$ <span id="resumenGastosEmpresa">{{ "{:,.0f}".format(gastos_pagados_empresa) }}</span></span>
+                      </p>
+                      {% if anticipos_empresa > 0 %}
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Anticipos pagados por Empresa:</strong> 
+                        <span style="float: right; font-size: 16px;">$ {{ "{:,.0f}".format(anticipos_empresa) }}</span>
+                      </p>
+                      {% endif %}
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Pagos a Empleados:</strong> 
+                        <span style="float: right; font-size: 16px;">$ <span id="resumenTotalPagos">0</span></span>
+                      </p>
+                      <hr style="border-color: rgba(255,255,255,0.3); margin: 15px 0;">
+                      <p style="margin: 8px 0; font-size: 18px; font-weight: bold;">
+                        <strong>DIFERENCIA (Recibe Empresa):</strong> 
+                        <span style="float: right; font-size: 22px;" id="resumenDiferenciaSpan">$ <span id="resumenDiferencia">{{ "{:,.0f}".format(diferencia) }}</span></span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Verificación de Cálculos -->
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; padding: 20px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 20px;" 
+                   data-presupuesto-descuento="{{ presupuesto.descuento }}" 
+                   data-presupuesto-iva="{{ presupuesto.iva }}" 
+                   data-presupuesto-porcentaje-empresa="{{ presupuesto.porcentaje_empresa }}">
+                <h4 style="margin-top: 0; color: white; font-weight: bold;">
+                  <i class="fa fa-check-circle"></i> Verificación de Cálculos
+                </h4>
+                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Neto:</strong> 
+                        <span style="float: right; font-size: 16px;" id="verif_neto">$ {{ "{:,.0f}".format(neto) }}</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Utilidad Real:</strong> 
+                        <span style="float: right; font-size: 16px;" id="verif_utilidad_real">$ {{ "{:,.0f}".format(utilidad_real) }}</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Total Gastos:</strong> 
+                        <span style="float: right; font-size: 16px;" id="verif_total_gastos">$ {{ "{:,.0f}".format(total_gastos) }}</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 12px; opacity: 0.9;">
+                        <i class="fa" id="verif_icon_neto">fa-{{ 'check' if verificacion_neto_ok else 'times' }}</i> 
+                        Verificación: Utilidad Real + Gastos = Neto
+                        <span style="float: right;" id="verif_neto_valor">$ {{ "{:,.0f}".format(verificacion_neto_valor) }}</span>
+                      </p>
+                    </div>
+                    <div class="col-md-6">
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>% Empleados:</strong> 
+                        <span style="float: right; font-size: 16px;" id="verif_porcentaje_empleados">{{ "{:.2f}".format(total_porcentaje_empleados) }}%</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>% Empresa:</strong> 
+                        <span style="float: right; font-size: 16px;" id="verif_porcentaje_empresa">{{ "{:.2f}".format(porcentaje_empresa) }}%</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Total % Distribución:</strong> 
+                        <span style="float: right; font-size: 16px;" id="verif_total_porcentaje_distribucion">{{ "{:.2f}".format(total_porcentaje_distribucion) }}%</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 12px; opacity: 0.9;">
+                        <i class="fa" id="verif_icon_utilidad">fa-{{ 'check' if verificacion_utilidad_ok else 'times' }}</i> 
+                        Verificación: Utilidad distribuida = Utilidad Real
+                        <span style="float: right;" id="verif_utilidad_distribuida">$ {{ "{:,.0f}".format(utilidad_distribuida) }}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <hr style="border-color: rgba(255,255,255,0.3); margin: 15px 0;">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Total Pagos Empleados:</strong> 
+                        <span style="float: right; font-size: 16px;" id="verif_total_pagos_empleados">$ {{ "{:,.0f}".format(total_pagos_empleados_final) }}</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Diferencia (Empresa):</strong> 
+                        <span style="float: right; font-size: 16px;" id="verif_diferencia">$ {{ "{:,.0f}".format(diferencia) }}</span>
+                      </p>
+                      <div id="verif_anticipos_a_devolver" style="{% if total_anticipos_a_devolver <= 0 %}display: none;{% endif %}">
+                        <p style="margin: 8px 0; font-size: 14px;">
+                          <strong>Anticipos a Devolver:</strong> 
+                          <span style="float: right; font-size: 16px;" id="verif_anticipos_a_devolver_valor">$ {{ "{:,.0f}".format(total_anticipos_a_devolver) }}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>Distribución de Utilidad Real:</strong> 
+                        <span style="float: right; font-size: 16px;" id="verif_distribucion_utilidad_real">$ {{ "{:,.0f}".format(utilidad_real) }}</span>
+                      </p>
+                      <hr style="border-color: rgba(255,255,255,0.3); margin: 15px 0;">
+                      <p style="margin: 8px 0; font-size: 18px; font-weight: bold;">
+                        <strong>SUMA TOTAL (Neto):</strong> 
+                        <span style="float: right; font-size: 22px;" id="verif_suma_total_neto">$ {{ "{:,.0f}".format(neto) }}</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 12px; opacity: 0.9;">
+                        <i class="fa" id="verif_icon_final"></i> 
+                        <span id="verif_mensaje_final"></span>
+                      </p>
+                      <div id="verif_desglose" style="{% if gastos_pagados_caja <= 0 and anticipos_pagados_caja <= 0 %}display: none;{% endif %}">
+                        <p style="margin: 8px 0; font-size: 11px; opacity: 0.8;">
+                          <strong>Desglose:</strong> <span id="verif_desglose_texto"></span>
+                        </p>
+                      </div>
+                      {% if total_anticipos_a_devolver > 0 %}
+                      <p style="margin: 8px 0; font-size: 11px; opacity: 0.8;">
+                        <strong>Nota:</strong> Los anticipos a devolver ($ {{ "{:,.0f}".format(total_anticipos_a_devolver) }}) están incluidos en la distribución de Utilidad Real.
+                      </p>
+                      {% endif %}
+                      {% if anticipos_empresa > 0 %}
+                      <p style="margin: 8px 0; font-size: 11px; opacity: 0.8;">
+                        <strong>Nota:</strong> Los anticipos pagados por la empresa ($ {{ "{:,.0f}".format(anticipos_empresa) }}) están incluidos en la Diferencia Empresa.
+                      </p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {% if anticipos_a_devolver %}
+              <!-- Resumen de Anticipos a Devolver -->
+              <div style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); border-radius: 10px; padding: 20px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 20px;">
+                <h4 style="margin-top: 0; color: white; font-weight: bold;">
+                  <i class="fa fa-undo"></i> Anticipos a Devolver
+                </h4>
+                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                  {% for quien_id, info in anticipos_a_devolver.items() %}
+                  <p style="margin: 8px 0; font-size: 14px;">
+                    <strong><i class="fa fa-user"></i> {{ info.nombre }}:</strong> 
+                    <span style="float: right; font-size: 16px;">$ {{ "{:,.0f}".format(info.total) }}</span>
+                  </p>
+                  {% endfor %}
+                  <hr style="border-color: rgba(255,255,255,0.3); margin: 15px 0;">
+                  <p style="margin: 8px 0; font-size: 18px; font-weight: bold;">
+                    <strong>TOTAL A DEVOLVER:</strong> 
+                    <span style="float: right; font-size: 22px;">
+                      $ {{ "{:,.0f}".format(total_anticipos_a_devolver) }}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              {% endif %}
+              
+              <!-- Ejercicio IVA Crédito e IVA Compra -->
+              <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); border-radius: 10px; padding: 20px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 20px;">
+                <h4 style="margin-top: 0; color: white; font-weight: bold;">
+                  <i class="fa fa-calculator"></i> Ejercicio IVA Crédito e IVA Compra
+                </h4>
+                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>IVA Crédito (Compras):</strong> 
+                        <span style="float: right; font-size: 16px;" id="iva_credito">$ {{ "{:,.0f}".format(iva_credito) }}</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 12px; opacity: 0.9;">
+                        <i class="fa fa-info-circle"></i> Suma del IVA de todas las facturas/boletas registradas
+                      </p>
+                    </div>
+                    <div class="col-md-6">
+                      <p style="margin: 8px 0; font-size: 14px;">
+                        <strong>IVA Compra (Ventas):</strong> 
+                        <span style="float: right; font-size: 16px;" id="iva_compra">$ {{ "{:,.0f}".format(iva_compra) }}</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 12px; opacity: 0.9;">
+                        <i class="fa fa-info-circle"></i> IVA del presupuesto ({{ presupuesto.iva }}% sobre el neto)
+                      </p>
+                    </div>
+                  </div>
+                  <hr style="border-color: rgba(255,255,255,0.3); margin: 15px 0;">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p style="margin: 8px 0; font-size: 18px; font-weight: bold;">
+                        <strong>IVA a Pagar Real:</strong> 
+                        <span style="float: right; font-size: 22px;" id="iva_a_pagar">$ {{ "{:,.0f}".format(iva_a_pagar) }}</span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 12px; opacity: 0.9;">
+                        <i class="fa fa-info-circle"></i> IVA Compra - IVA Crédito
+                      </p>
+                    </div>
+                    <div class="col-md-6">
+                      <p style="margin: 8px 0; font-size: 18px; font-weight: bold;">
+                        <strong>Diferencia IVA:</strong> 
+                        <span style="float: right; font-size: 22px; color: {% if diferencia_iva >= 0 %}#FFB6C1{% else %}#90EE90{% endif %};" id="diferencia_iva">
+                          $ {{ "{:,.0f}".format(diferencia_iva) }}
+                        </span>
+                      </p>
+                      <p style="margin: 8px 0; font-size: 12px; opacity: 0.9;">
+                        {% if diferencia_iva >= 0 %}
+                        <i class="fa fa-exclamation-triangle"></i> <span style="color: #FFB6C1;">Debe pagar IVA</span>
+                        {% else %}
+                        <i class="fa fa-check-circle"></i> <span style="color: #90EE90;">Crédito IVA a favor</span>
+                        {% endif %}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editar Costos -->
+  <div class="modal fade" id="modalEditCosto" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Editar Costos del Item</h4>
+        </div>
+        <div class="modal-body">
+          <form id="formEditCosto">
+            <input type="hidden" id="costo_item_id" name="item_id">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Insumos</label>
+                  <input type="number" class="form-control" id="costo_insumos" step="0.01" min="0" value="0">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Maquila</label>
+                  <input type="number" class="form-control" id="costo_maquila" step="0.01" min="0" value="0">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Instalación</label>
+                  <input type="number" class="form-control" id="costo_instalacion" step="0.01" min="0" value="0">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Desinstalación</label>
+                  <input type="number" class="form-control" id="costo_desinstalacion" step="0.01" min="0" value="0">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Materiales de Ferretería</label>
+                  <input type="number" class="form-control" id="costo_materiales" step="0.01" min="0" value="0">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Gastos Generales</label>
+                  <input type="number" class="form-control" id="costo_gastos" step="0.01" min="0" value="0">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Utilidad (%)</label>
+                  <input type="number" class="form-control" id="costo_utilidad" step="0.01" min="0" value="0">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Flete</label>
+                  <input type="number" class="form-control" id="costo_flete" step="0.01" min="0" value="0">
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Total Costo (sin utilidad):</label>
+              <input type="text" class="form-control" id="costo_total_sin_utilidad" readonly>
+            </div>
+            <div class="form-group">
+              <label>Valor con Utilidad:</label>
+              <input type="text" class="form-control" id="costo_valor_con_utilidad" readonly style="font-weight: bold; color: #337ab7;">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnSaveCosto">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Agregar/Editar Item -->
+  <div class="modal fade" id="modalItemPresupuesto" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id="modalItemPresupuestoLabel">Agregar Item</h4>
+        </div>
+        <form id="formItemPresupuesto">
+          <div class="modal-body">
+            <input type="hidden" name="presupuesto_id" id="item_presupuesto_id" value="{{ presupuesto.id }}">
+            <input type="hidden" name="proyecto_id" id="item_proyecto_id" value="{{ proyecto.id }}">
+            <input type="hidden" name="item_id" id="item_id">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="item_referencia">Referencia</label>
+                  <input type="text" class="form-control" id="item_referencia" name="referencia" placeholder="Ej: SC1">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="item_cantidad">Cantidad *</label>
+                  <input type="number" class="form-control" id="item_cantidad" name="cantidad" step="0.01" min="0" value="1" required>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="item_ubicacion">Ubicación</label>
+                  <input type="text" class="form-control" id="item_ubicacion" name="ubicacion" placeholder="Ej: Condominio">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="item_tipologia">Tipología</label>
+                  <input type="text" class="form-control" id="item_tipologia" name="tipologia" placeholder="Ej: Sirena">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="item_tipo">Tipo</label>
+                  <select class="form-control" id="item_tipo" name="tipo">
+                    <option value="Material">Material</option>
+                    <option value="Servicio">Servicio</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="item_valor_unitario">Valor Unitario *</label>
+                  <input type="number" class="form-control" id="item_valor_unitario" name="valor_unitario" step="0.01" min="0" value="0" required>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="item_caracteristicas">Características</label>
+              <textarea class="form-control" id="item_caracteristicas" name="caracteristicas" rows="3" placeholder="Ej: 30w potencia - 2 controles larga distancia - Activacion por app"></textarea>
+            </div>
+            <div id="itemMsg"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Agregar Gasto -->
+  <div class="modal fade" id="modalAddGasto" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id="modalGastoTitle">Agregar Gasto</h4>
+        </div>
+        <div class="modal-body">
+          <form id="formAddGasto">
+            <input type="hidden" name="presupuesto_id" value="{{ presupuesto.id }}">
+            <input type="hidden" name="gasto_id" id="gasto_id" value="">
+            <div class="form-group">
+              <label>Descripción *</label>
+              <input type="text" class="form-control" name="descripcion" required>
+            </div>
+            <div class="form-group">
+              <label>Monto *</label>
+              <input type="number" class="form-control" name="monto" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+              <label>Tipo</label>
+              <select class="form-control" name="tipo">
+                <option value="general">General</option>
+                <option value="materiales">Materiales</option>
+                <option value="transporte">Transporte</option>
+                <option value="otros">Otros</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Pagado por (opcional)</label>
+              <select class="form-control" name="pagado_por_id" id="gasto_pagado_por">
+                <option value="">Caja del Proyecto</option>
+                <option value="empresa">Empresa</option>
+                {% for usuario in usuarios %}
+                <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted">
+                <strong>Caja del Proyecto:</strong> El gasto sale del presupuesto del proyecto (no se devuelve a nadie).<br>
+                <strong>Empresa:</strong> Se devuelve a la empresa (se suma a la diferencia).<br>
+                <strong>Empleado:</strong> Se devuelve al empleado que lo pagó.
+              </small>
+            </div>
+            <div class="form-group">
+              <label>Fecha</label>
+              <input type="date" class="form-control" name="fecha" value="{{ now.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="form-group">
+              <label>Vincular a Factura/Boleta (opcional)</label>
+              <select class="form-control" name="factura_id" id="gasto_factura_id">
+                <option value="">Sin vincular</option>
+                {% for factura in facturas %}
+                <option value="{{ factura.id }}">
+                  {{ 'Factura' if factura.tipo_documento == 'factura' else 'Boleta' }} 
+                  {{ factura.numero_documento or '' }} - 
+                  {{ factura.proveedor or 'Sin proveedor' }} 
+                  ({{ factura.fecha_emision or 'Sin fecha' }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnSaveGasto">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Agregar/Editar Pago Empleado -->
+  <div class="modal fade" id="modalAddPagoEmpleado" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id="modalPagoEmpleadoTitle">Agregar Pago a Empleado</h4>
+        </div>
+        <div class="modal-body">
+          <form id="formAddPagoEmpleado">
+            <input type="hidden" name="presupuesto_id" value="{{ presupuesto.id }}">
+            <div class="form-group">
+              <label>Empleado *</label>
+              <select class="form-control" name="empleado_id" id="pago_empleado_id" required>
+                <option value="">Seleccione un empleado</option>
+                {% for usuario in usuarios %}
+                <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Porcentaje de Pago (%)</label>
+              <input type="number" class="form-control" name="porcentaje_pago" id="pago_porcentaje" step="0.01" min="0" max="100" value="0">
+            </div>
+            <div class="form-group">
+              <label>Anticipo (a descontar del pago)</label>
+              <input type="number" class="form-control" name="anticipo" id="pago_anticipo" step="0.01" min="0" value="0">
+              <small class="form-text text-muted">El anticipo se descontará del pago total del empleado.</small>
+            </div>
+            <div class="form-group">
+              <label>¿Quién pagó el anticipo? (opcional)</label>
+              <select class="form-control" name="quien_pago_anticipo_id" id="pago_quien_pago">
+                <option value="">Caja del Proyecto</option>
+                <option value="empresa">Empresa</option>
+                {% for usuario in usuarios %}
+                <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted">
+                <strong>Caja del Proyecto:</strong> El anticipo sale del presupuesto del proyecto (no se devuelve a nadie).<br>
+                <strong>Empresa:</strong> Se devuelve a la empresa (se suma a la diferencia).<br>
+                <strong>Empleado:</strong> Se devuelve al empleado que lo pagó.
+              </small>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnSavePagoEmpleado">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para subir factura/boleta -->
+  <div class="modal fade" id="modalUploadFactura" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title"><i class="fa fa-upload"></i> Subir Factura/Boleta</h4>
+        </div>
+        <div class="modal-body">
+          <div id="uploadFacturaStep1">
+            <form id="formUploadFactura" enctype="multipart/form-data">
+              <input type="hidden" name="presupuesto_id" value="{{ presupuesto.id }}">
+              <div class="form-group">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" name="usar_ocr" id="factura_usar_ocr" checked>
+                    <strong>Usar OCR y extracción automática de datos</strong>
+                  </label>
+                </div>
+                <small class="form-text text-muted">Si está marcado, el sistema extraerá automáticamente número, proveedor, montos e items del documento. Si no, solo guardará el archivo con los datos que ingreses manualmente.</small>
+              </div>
+              <div class="alert alert-info" id="info_ocr_activo">
+                <i class="fa fa-info-circle"></i> Con OCR activado, los datos se extraerán automáticamente del documento y podrás editarlos antes de guardar.
+              </div>
+              <div id="campos_manuales_factura" style="display: none;">
+                <div class="alert alert-warning">
+                  <i class="fa fa-exclamation-triangle"></i> OCR desactivado. Debes ingresar los datos manualmente antes de guardar.
+                </div>
+                <div class="form-group">
+                  <label>Tipo de documento</label>
+                  <select class="form-control" name="tipo_documento" id="factura_tipo_documento_step1">
+                    <option value="factura">Factura (sin IVA - se agregará 19%)</option>
+                    <option value="boleta">Boleta (con IVA incluido)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Número de documento *</label>
+                  <input type="text" class="form-control" name="numero_documento" id="factura_numero_documento" placeholder="Ej: 12345" required>
+                </div>
+                <div class="form-group">
+                  <label>Proveedor *</label>
+                  <input type="text" class="form-control" name="proveedor" id="factura_proveedor" placeholder="Nombre del proveedor" required>
+                </div>
+                <div class="form-group">
+                  <label>Fecha Emisión</label>
+                  <input type="date" class="form-control" name="fecha_emision" id="factura_fecha_emision_step1">
+                </div>
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label>Neto *</label>
+                      <input type="text" class="form-control" name="neto" id="factura_neto" placeholder="0" data-thousands="." required>
+                      <small class="form-text text-muted">Usar punto (.) como separador de miles</small>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label>IVA *</label>
+                      <input type="text" class="form-control" name="iva" id="factura_iva" placeholder="0" data-thousands="." required>
+                      <small class="form-text text-muted">Usar punto (.) como separador de miles</small>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label>Total *</label>
+                      <input type="text" class="form-control" name="total" id="factura_total" placeholder="0" data-thousands="." required>
+                      <small class="form-text text-muted">Usar punto (.) como separador de miles</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Seleccionar archivo (PDF o imagen)</label>
+                <input type="file" class="form-control" name="archivo" id="factura_archivo" accept=".pdf,.jpg,.jpeg,.png,.bmp">
+                <small class="form-text text-muted">Formatos soportados: PDF, JPG, PNG, BMP.</small>
+              </div>
+            </form>
+          </div>
+          <div id="uploadFacturaStep2" style="display: none;">
+            <div class="text-center">
+              <i class="fa fa-spinner fa-spin fa-3x"></i>
+              <p>Procesando factura...</p>
+              <p id="procesandoMensaje">Extrayendo texto con OCR...</p>
+            </div>
+          </div>
+          <div id="uploadFacturaStep3" style="display: none;">
+            <div class="form-group">
+              <label>Tipo de documento</label>
+              <select class="form-control" id="factura_tipo_documento">
+                <option value="factura">Factura (sin IVA - se agregará 19%)</option>
+                <option value="boleta">Boleta (con IVA incluido)</option>
+              </select>
+              <small class="form-text text-muted">Las facturas tienen productos sin IVA, las boletas ya incluyen el IVA.</small>
+            </div>
+            <div class="form-group">
+              <label>Número de documento</label>
+              <input type="text" class="form-control" id="factura_numero_documento_step3" placeholder="Ej: 12345">
+            </div>
+            <div class="form-group">
+              <label>Proveedor</label>
+              <input type="text" class="form-control" id="factura_proveedor_step3" placeholder="Nombre del proveedor">
+            </div>
+            <div class="form-group">
+              <label>Fecha Emisión</label>
+              <input type="date" class="form-control" id="factura_fecha_emision_step3">
+            </div>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Neto</label>
+                  <input type="text" class="form-control" id="factura_neto_step3" placeholder="0" data-thousands=".">
+                  <small class="form-text text-muted">Usar punto (.) como separador de miles</small>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>IVA</label>
+                  <input type="text" class="form-control" id="factura_iva_step3" placeholder="0" data-thousands=".">
+                  <small class="form-text text-muted">Usar punto (.) como separador de miles</small>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Total</label>
+                  <input type="text" class="form-control" id="factura_total_step3" placeholder="0" data-thousands=".">
+                  <small class="form-text text-muted">Usar punto (.) como separador de miles</small>
+                </div>
+              </div>
+            </div>
+            <h5>Items extraídos (puedes editar antes de confirmar):</h5>
+            <div id="itemsExtraidosContainer"></div>
+            <div class="form-group" style="margin-top: 15px;">
+              <label>¿Quién pagó estos gastos?</label>
+              <select class="form-control" id="factura_pagado_por">
+                <option value="">Caja del Proyecto</option>
+                <option value="empresa">Empresa</option>
+                {% for usuario in usuarios %}
+                <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Fecha de los gastos (opcional)</label>
+              <input type="date" class="form-control" id="factura_fecha" value="{{ now.strftime('%Y-%m-%d') }}">
+              <small class="form-text text-muted">Esta fecha se aplicará a los gastos que se crearán desde los items. La fecha de emisión de la factura está arriba.</small>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal" id="btnCancelUpload">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnProcessFactura" style="display: none;">Procesar Factura</button>
+          <button type="button" class="btn btn-success" id="btnConfirmItems" style="display: none;">Confirmar y Agregar Items</button>
+          <button type="button" class="btn btn-success" id="btnSaveFacturaFromStep3" style="display: none;">Guardar Factura</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para ver detalles de factura -->
+  <!-- Modal Editar Factura -->
+  <div class="modal fade" id="modalEditFactura" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title"><i class="fa fa-edit"></i> Editar Factura/Boleta</h4>
+        </div>
+        <div class="modal-body">
+          <form id="formEditFactura">
+            <input type="hidden" id="edit_factura_id" value="">
+            <div class="form-group">
+              <label>Tipo de documento</label>
+              <select class="form-control" id="edit_factura_tipo_documento">
+                <option value="factura">Factura (sin IVA - se agregará 19%)</option>
+                <option value="boleta">Boleta (con IVA incluido)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Número de documento</label>
+              <input type="text" class="form-control" id="edit_factura_numero_documento" placeholder="Ej: 12345">
+            </div>
+            <div class="form-group">
+              <label>Proveedor</label>
+              <input type="text" class="form-control" id="edit_factura_proveedor" placeholder="Nombre del proveedor">
+            </div>
+            <div class="form-group">
+              <label>Fecha Emisión</label>
+              <input type="date" class="form-control" id="edit_factura_fecha_emision">
+            </div>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Neto</label>
+                  <input type="text" class="form-control" id="edit_factura_neto" placeholder="0" data-thousands=".">
+                  <small class="form-text text-muted">Usar punto (.) como separador de miles</small>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>IVA</label>
+                  <input type="text" class="form-control" id="edit_factura_iva" placeholder="0" data-thousands=".">
+                  <small class="form-text text-muted">Usar punto (.) como separador de miles</small>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Total</label>
+                  <input type="text" class="form-control" id="edit_factura_total" placeholder="0" data-thousands=".">
+                  <small class="form-text text-muted">Usar punto (.) como separador de miles</small>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnSaveFactura">Guardar Cambios</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalViewFactura" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title"><i class="fa fa-file-text"></i> Detalles de Factura/Boleta</h4>
+        </div>
+        <div class="modal-body" id="facturaDetailsContent">
+          <!-- Se llena dinámicamente -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Crear Presupuesto Secundario -->
+  <div class="modal fade" id="modalCrearPresupuestoSecundario" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Crear Presupuesto Secundario</h4>
+        </div>
+        <form id="formCrearPresupuestoSecundario">
+          <div class="modal-body">
+            <input type="hidden" name="proyecto_id" value="{{ proyecto.id }}">
+            <input type="hidden" name="tipo_presupuesto" value="secundario">
+            <input type="hidden" name="cliente_id" value="{{ presupuesto.cliente_id }}">
+            <input type="hidden" name="cliente_nombre" value="{{ presupuesto.cliente_nombre }}">
+            <input type="hidden" name="cliente_email" value="{{ presupuesto.cliente_email }}">
+            <input type="hidden" name="cliente_telefono" value="{{ presupuesto.cliente_telefono }}">
+            
+            <div class="form-group">
+              <label for="obra_secundario">Descripción/Obra</label>
+              <input type="text" class="form-control" name="obra" id="obra_secundario" required>
+              <small class="form-text text-muted">Descripción del trabajo a realizar</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="fecha_secundario">Fecha</label>
+              <input type="date" class="form-control" name="fecha" id="fecha_secundario" required>
+            </div>
+            
+            <div class="form-group">
+              <label>Vincular con:</label>
+              <div class="radio">
+                <label>
+                  <input type="radio" name="tipo_vinculo" value="ninguno" checked>
+                  Ninguno
+                </label>
+              </div>
+              {% if incidencias and incidencias|length > 0 %}
+              <div class="radio">
+                <label>
+                  <input type="radio" name="tipo_vinculo" value="incidencia">
+                  Incidencia
+                </label>
+              </div>
+              <div class="form-group" id="incidencia_group" style="display: none; margin-left: 20px;">
+                <select class="form-control" name="incidencia_id" id="incidencia_id">
+                  {% for incidencia in incidencias %}
+                  <option value="{{ incidencia.id }}">Incidencia #{{ incidencia.id }} - {{ incidencia.titulo }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              {% endif %}
+              {% if visitas_mantenimiento and visitas_mantenimiento|length > 0 %}
+              <div class="radio">
+                <label>
+                  <input type="radio" name="tipo_vinculo" value="visita">
+                  Visita de Mantenimiento
+                </label>
+              </div>
+              <div class="form-group" id="visita_group" style="display: none; margin-left: 20px;">
+                <select class="form-control" name="visita_mantenimiento_id" id="visita_mantenimiento_id">
+                  {% for visita in visitas_mantenimiento %}
+                  <option value="{{ visita.id }}">Visita {{ visita.tipo_visita|title }} - {{ visita.fecha_visita }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              {% endif %}
+            </div>
+            
+            <div class="form-group">
+              <label for="generalidades_secundario">Generalidades/Observaciones</label>
+              <textarea class="form-control" name="generalidades" id="generalidades_secundario" rows="3"></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label for="descuento_secundario">Descuento (%)</label>
+              <input type="number" class="form-control" name="descuento" id="descuento_secundario" value="0" min="0" max="100" step="0.01">
+            </div>
+            
+            <div class="form-group">
+              <label for="iva_secundario">IVA (%)</label>
+              <input type="number" class="form-control" name="iva" id="iva_secundario" value="19" min="0" max="100" step="0.01">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success">Crear Presupuesto</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.presupuestoId = {{ presupuesto.id }};
+    const totalItems = {{ total_items }};
+    window.proyectoId = {{ proyecto.id }};
+  </script>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/gestion_presupuesto.js') }}"></script>
+  
+  <script>
+    // Handlers de facturas - Registrar después de cargar jQuery y el script principal
+    $(document).ready(function() {
+        // Mostrar/ocultar campos según tipo de vínculo seleccionado
+        $('input[name="tipo_vinculo"]').on('change', function() {
+            if ($(this).val() === 'incidencia') {
+                $('#incidencia_group').show();
+                $('#visita_group').hide();
+            } else if ($(this).val() === 'visita') {
+                $('#visita_group').show();
+                $('#incidencia_group').hide();
+            } else {
+                $('#incidencia_group').hide();
+                $('#visita_group').hide();
+            }
+        });
+        
+        // Botón para crear presupuesto secundario
+        $('#btnCrearPresupuestoSecundario').on('click', function() {
+            // Establecer fecha actual por defecto
+            var today = new Date().toISOString().split('T')[0];
+            $('#fecha_secundario').val(today);
+            $('#modalCrearPresupuestoSecundario').modal('show');
+        });
+        
+        // Formulario para crear presupuesto secundario
+        $('#formCrearPresupuestoSecundario').on('submit', function(e) {
+            e.preventDefault();
+            var formData = $(this).serializeArray();
+            var data = {};
+            
+            // Convertir a objeto
+            $.each(formData, function(i, field) {
+                data[field.name] = field.value;
+            });
+            
+            // Limpiar campos de vínculo según selección
+            var tipoVinculo = $('input[name="tipo_vinculo"]:checked').val();
+            if (tipoVinculo !== 'incidencia') {
+                data['incidencia_id'] = '';
+            }
+            if (tipoVinculo !== 'visita') {
+                data['visita_mantenimiento_id'] = '';
+            }
+            
+            $.ajax({
+                url: '/create_or_update_presupuesto',
+                type: 'POST',
+                data: data,
+                success: function(response) {
+                    if (response.status === 'success') {
+                        alert('Presupuesto secundario creado correctamente');
+                        $('#modalCrearPresupuestoSecundario').modal('hide');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (response.message || 'Error desconocido'));
+                    }
+                },
+                error: function() {
+                    alert('Error al crear presupuesto secundario');
+                }
+            });
+        });
+        // Ver detalles de factura
+        $(document).on('click', '.btn-view-factura', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const facturaId = $(this).data('factura-id');
+                if (!facturaId) {
+                    alert('Error: No se encontró ID de factura');
+                    return;
+                }
+                $.ajax({
+                    url: '/api/presupuesto/factura/' + facturaId,
+                    method: 'GET',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            const factura = response.factura;
+                            const gastos = response.gastos || [];
+                            
+                            let html = '<div class="row">';
+                            html += '<div class="col-md-6"><strong>Tipo:</strong> ' + (factura.tipo_documento === 'factura' ? 'Factura' : 'Boleta') + '</div>';
+                            html += '<div class="col-md-6"><strong>Número:</strong> ' + (factura.numero_documento || 'N/A') + '</div>';
+                            html += '<div class="col-md-6"><strong>Proveedor:</strong> ' + (factura.proveedor || 'N/A') + '</div>';
+                            html += '<div class="col-md-6"><strong>Fecha Emisión:</strong> ' + (factura.fecha_emision || 'N/A') + '</div>';
+                            html += '<div class="col-md-4"><strong>Neto:</strong> $ ' + (factura.neto || 0).toLocaleString('es-CL', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + '</div>';
+                            html += '<div class="col-md-4"><strong>IVA:</strong> $ ' + (factura.iva || 0).toLocaleString('es-CL', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + '</div>';
+                            html += '<div class="col-md-4"><strong>Total:</strong> $ ' + (factura.total || 0).toLocaleString('es-CL', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + '</div>';
+                            html += '</div>';
+                            
+                            if (gastos.length > 0) {
+                                html += '<hr><h5>Gastos Vinculados (' + gastos.length + '):</h5>';
+                                html += '<table class="table table-bordered">';
+                                html += '<thead><tr><th>Descripción</th><th>Monto</th><th>Tipo</th><th>Fecha</th></tr></thead>';
+                                html += '<tbody>';
+                                gastos.forEach(function(gasto) {
+                                    html += '<tr>';
+                                    html += '<td>' + (gasto.descripcion || 'N/A') + '</td>';
+                                    html += '<td>$ ' + (gasto.monto || 0).toLocaleString('es-CL', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + '</td>';
+                                    html += '<td>' + (gasto.tipo || 'N/A') + '</td>';
+                                    html += '<td>' + (gasto.fecha || 'N/A') + '</td>';
+                                    html += '</tr>';
+                                });
+                                html += '</tbody></table>';
+                            } else {
+                                html += '<hr><p class="text-muted">No hay gastos vinculados a esta factura.</p>';
+                            }
+                            
+                            $('#facturaDetailsContent').html(html);
+                            $('#modalViewFactura').modal('show');
+                        } else {
+                            alert('Error: ' + (response.message || 'No se pudieron cargar los detalles'));
+                        }
+                    },
+                    error: function() {
+                        alert('Error al cargar los detalles de la factura');
+                    }
+                });
+        });
+        
+        // Editar factura
+        $(document).on('click', '.btn-edit-factura', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const facturaId = $(this).data('factura-id');
+            if (!facturaId) {
+                alert('Error: No se encontró ID de factura');
+                return;
+            }
+            $.ajax({
+                url: '/api/presupuesto/factura/' + facturaId,
+                method: 'GET',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        const factura = response.factura;
+                        $('#edit_factura_id').val(factura.id);
+                        $('#edit_factura_tipo_documento').val(factura.tipo_documento || 'factura');
+                        $('#edit_factura_numero_documento').val(factura.numero_documento || '');
+                        $('#edit_factura_proveedor').val(factura.proveedor || '');
+                        $('#edit_factura_fecha_emision').val(factura.fecha_emision || '');
+                        $('#edit_factura_neto').val(factura.neto ? factura.neto.toLocaleString('es-CL', {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '');
+                        $('#edit_factura_iva').val(factura.iva ? factura.iva.toLocaleString('es-CL', {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '');
+                        $('#edit_factura_total').val(factura.total ? factura.total.toLocaleString('es-CL', {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '');
+                        $('#modalEditFactura').modal('show');
+                    } else {
+                        alert('Error: ' + (response.message || 'No se pudieron cargar los datos'));
+                    }
+                },
+                error: function() {
+                    alert('Error al cargar los datos de la factura');
+                }
+            });
+        });
+        
+        // Guardar cambios de factura - Handler ya está registrado en gestion_presupuesto.js
+        // No duplicar aquí para evitar múltiples ejecuciones
+        
+        // Eliminar factura - Handler ya está registrado en gestion_presupuesto.js
+        // No duplicar aquí para evitar múltiples ejecuciones
+    });
+    
+    // Actualización dinámica del resumen financiero por mes (solo para proyectos de mantenimiento)
+    {% if es_mantenimiento_o_ciclo and gastos_por_mes %}
+    $(document).ready(function() {
+        var $gastosContainer = $('#gastosContainer');
+        var esMantenimiento = $gastosContainer.data('es-mantenimiento') === true || $gastosContainer.data('es-mantenimiento') === 'true';
+        
+        if (esMantenimiento) {
+            // Datos globales del presupuesto
+            var datosPresupuesto = {
+                totalItems: parseFloat($gastosContainer.data('total-items')) || 0,
+                neto: parseFloat($gastosContainer.data('neto')) || 0,
+                descuento: parseFloat($gastosContainer.data('descuento')) || 0,
+                iva: parseFloat($gastosContainer.data('iva')) || 0,
+                ivaMonto: parseFloat($gastosContainer.data('iva-monto')) || 0,
+                totalProyecto: parseFloat($gastosContainer.data('total-proyecto')) || 0,
+                porcentajeEmpresa: parseFloat($gastosContainer.data('porcentaje-empresa')) || 0,
+                anticiposEmpresa: parseFloat($gastosContainer.data('anticipos-empresa')) || 0
+            };
+            
+            // Datos de gastos por mes (convertir de Jinja2 a JavaScript)
+            var gastosPorMes = {};
+            {% for mes_clave, datos_mes in gastos_por_mes.items() %}
+            gastosPorMes['{{ mes_clave }}'] = {
+                mesNombre: '{{ datos_mes.mes_nombre }}',
+                total: {{ datos_mes.total }},
+                totalEmpresa: {{ datos_mes.total_empresa }},
+                totalCaja: {{ datos_mes.total_caja }},
+                totalEmpleados: {
+                    {% for emp_id, datos_emp in datos_mes.total_empleados.items() %}
+                    {{ emp_id }}: {
+                        nombre: '{{ datos_emp.nombre if datos_emp.nombre else ("Empleado ID: " + emp_id|string) }}',
+                        total: {{ datos_emp.total if datos_emp.total is defined else datos_emp }}
+                    }{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                }
+            };
+            {% endfor %}
+            
+            // Función para actualizar el resumen financiero según el mes seleccionado
+            function actualizarResumenFinanciero(mesClave) {
+                var gastosMes = gastosPorMes[mesClave];
+                if (!gastosMes) {
+                    // Si no hay mes seleccionado, mostrar resumen general
+                    actualizarResumenFinancieroGeneral();
+                    return;
+                }
+                
+                // Calcular utilidad real del mes (Neto - Gastos del mes)
+                var utilidadRealMes = datosPresupuesto.neto - gastosMes.total;
+                
+                // Calcular utilidad empresa del mes
+                var utilidadEmpresaMes = Math.round(utilidadRealMes * (datosPresupuesto.porcentajeEmpresa / 100));
+                
+                // Calcular diferencia del mes (utilidad empresa + gastos empresa + anticipos empresa)
+                var diferenciaMes = utilidadEmpresaMes + gastosMes.totalEmpresa + datosPresupuesto.anticiposEmpresa;
+                
+                // Actualizar valores en el resumen
+                $('#resumenUtilidadReal').text(utilidadRealMes.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#resumenMontoEmpresaUtilidad').text(utilidadEmpresaMes.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#resumenGastosEmpresa').text(gastosMes.totalEmpresa.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#resumenDiferencia').text(diferenciaMes.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                
+                // Actualizar verificación
+                $('#verif_utilidad_real').text(utilidadRealMes.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#verif_total_gastos').text(gastosMes.total.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#verif_diferencia').text(diferenciaMes.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#verif_distribucion_utilidad_real').text(utilidadRealMes.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                
+                // Verificación: Utilidad Real + Gastos = Neto
+                var verificacionNeto = utilidadRealMes + gastosMes.total;
+                var verificacionNetoOk = Math.abs(verificacionNeto - datosPresupuesto.neto) < 0.01;
+                $('#verif_neto_valor').text(verificacionNeto.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#verif_icon_neto').removeClass('fa-check fa-times').addClass(verificacionNetoOk ? 'fa-check' : 'fa-times');
+                
+                // Actualizar título del mes seleccionado
+                $('#resumenMesSeleccionado').text('(' + gastosMes.mesNombre + ')');
+                
+                // Actualizar mensaje final
+                var sumaTotal = utilidadRealMes + gastosMes.total;
+                var sumaTotalOk = Math.abs(sumaTotal - datosPresupuesto.neto) < 0.01;
+                $('#verif_suma_total_neto').text(sumaTotal.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#verif_icon_final').removeClass('fa-check fa-times').addClass(sumaTotalOk ? 'fa-check' : 'fa-times');
+                $('#verif_mensaje_final').text(sumaTotalOk ? 'Verificación correcta: Utilidad Real + Gastos = Neto' : 'Error en la verificación');
+            }
+            
+            // Función para mostrar resumen general (todos los meses)
+            function actualizarResumenFinancieroGeneral() {
+                // Calcular total de gastos de todos los meses
+                var totalGastosGeneral = 0;
+                var totalGastosEmpresaGeneral = 0;
+                Object.keys(gastosPorMes).forEach(function(mesClave) {
+                    totalGastosGeneral += gastosPorMes[mesClave].total;
+                    totalGastosEmpresaGeneral += gastosPorMes[mesClave].totalEmpresa;
+                });
+                
+                // Calcular con totales generales
+                var utilidadRealGeneral = datosPresupuesto.neto - totalGastosGeneral;
+                var utilidadEmpresaGeneral = Math.round(utilidadRealGeneral * (datosPresupuesto.porcentajeEmpresa / 100));
+                var diferenciaGeneral = utilidadEmpresaGeneral + totalGastosEmpresaGeneral + datosPresupuesto.anticiposEmpresa;
+                
+                // Actualizar valores
+                $('#resumenUtilidadReal').text(utilidadRealGeneral.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#resumenMontoEmpresaUtilidad').text(utilidadEmpresaGeneral.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#resumenGastosEmpresa').text(totalGastosEmpresaGeneral.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#resumenDiferencia').text(diferenciaGeneral.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                
+                // Actualizar verificación
+                $('#verif_utilidad_real').text(utilidadRealGeneral.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#verif_total_gastos').text(totalGastosGeneral.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#verif_diferencia').text(diferenciaGeneral.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#verif_distribucion_utilidad_real').text(utilidadRealGeneral.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                
+                // Verificación: Utilidad Real + Gastos = Neto
+                var verificacionNeto = utilidadRealGeneral + totalGastosGeneral;
+                var verificacionNetoOk = Math.abs(verificacionNeto - datosPresupuesto.neto) < 0.01;
+                $('#verif_neto_valor').text(verificacionNeto.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#verif_icon_neto').removeClass('fa-check fa-times').addClass(verificacionNetoOk ? 'fa-check' : 'fa-times');
+                
+                // Actualizar título
+                $('#resumenMesSeleccionado').text('(General)');
+                
+                // Actualizar mensaje final
+                var sumaTotal = utilidadRealGeneral + totalGastosGeneral;
+                var sumaTotalOk = Math.abs(sumaTotal - datosPresupuesto.neto) < 0.01;
+                $('#verif_suma_total_neto').text(sumaTotal.toLocaleString('es-CL', {maximumFractionDigits: 0}));
+                $('#verif_icon_final').removeClass('fa-check fa-times').addClass(sumaTotalOk ? 'fa-check' : 'fa-times');
+                $('#verif_mensaje_final').text(sumaTotalOk ? 'Verificación correcta: Utilidad Real + Gastos = Neto' : 'Error en la verificación');
+            }
+            
+            // Event listener para cuando se abre/cierra un mes
+            $('#accordionGastosMensuales').on('shown.bs.collapse', function(e) {
+                var $collapsedPanel = $(e.target);
+                var mesClave = $collapsedPanel.data('mes-clave');
+                if (mesClave && gastosPorMes[mesClave]) {
+                    actualizarResumenFinanciero(mesClave);
+                }
+            });
+            
+            $('#accordionGastosMensuales').on('hidden.bs.collapse', function(e) {
+                // Verificar si hay algún mes abierto
+                var hayMesAbierto = $('#accordionGastosMensuales .panel-collapse.in').length > 0;
+                if (!hayMesAbierto) {
+                    actualizarResumenFinancieroGeneral();
+                } else {
+                    // Actualizar con el mes que quedó abierto
+                    var $panelAbierto = $('#accordionGastosMensuales .panel-collapse.in').first();
+                    var mesClaveAbierto = $panelAbierto.data('mes-clave');
+                    if (mesClaveAbierto && gastosPorMes[mesClaveAbierto]) {
+                        actualizarResumenFinanciero(mesClaveAbierto);
+                    }
+                }
+            });
+            
+            // Inicializar: actualizar con el primer mes abierto o general
+            setTimeout(function() {
+                var $primerMesAbierto = $('#accordionGastosMensuales .panel-collapse.in').first();
+                if ($primerMesAbierto.length > 0) {
+                    var mesClave = $primerMesAbierto.data('mes-clave');
+                    if (mesClave) {
+                        actualizarResumenFinanciero(mesClave);
+                    }
+                } else {
+                    actualizarResumenFinancieroGeneral();
+                }
+            }, 100);
+        }
+    });
+    {% endif %}
+  </script>
+{% endblock javascripts %}
+
+

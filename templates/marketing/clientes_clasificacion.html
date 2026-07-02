@@ -1,0 +1,229 @@
+{% extends "base_site.html" %}
+
+{% block title %}Clasificación de Clientes{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-tags"></i> Clasificación de Clientes</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <!-- Tabs -->
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Segmentos de Clientes</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#recurrentes" aria-controls="recurrentes" role="tab" data-toggle="tab"><i class="fa fa-repeat"></i> Recurrentes ({{ segmentos.recurrente|length }})</a></li>
+                <li role="presentation"><a href="#nuevos" aria-controls="nuevos" role="tab" data-toggle="tab"><i class="fa fa-user-plus"></i> Nuevos ({{ segmentos.nuevo|length }})</a></li>
+                <li role="presentation"><a href="#perdidos" aria-controls="perdidos" role="tab" data-toggle="tab"><i class="fa fa-user-times"></i> Perdidos ({{ segmentos.perdido|length }})</a></li>
+                <li role="presentation"><a href="#cumpleanos" aria-controls="cumpleanos" role="tab" data-toggle="tab"><i class="fa fa-birthday-cake"></i> Cumpleaños del Mes ({{ segmentos.cumpleanos|length }})</a></li>
+              </ul>
+
+              <div class="tab-content" style="padding-top: 20px;">
+                <!-- Recurrentes -->
+                <div role="tabpanel" class="tab-pane fade in active" id="recurrentes">
+                  <table class="table table-striped table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Frecuencia</th>
+                        <th>Última Visita</th>
+                        <th>Valor Total</th>
+                        <th>Scoring</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for segmento in segmentos.recurrente %}
+                      {% set cliente = clientes[segmento.cliente_id] %}
+                      <tr>
+                        <td>
+                          {% if cliente.tipo_cliente == 'empresa' %}
+                            {{ cliente.nombre_empresa }}
+                          {% else %}
+                            {{ cliente.nombre }} {{ cliente.apellido }}
+                          {% endif %}
+                        </td>
+                        <td>{{ cliente.correo }}</td>
+                        <td>{{ cliente.telefono }}</td>
+                        <td>
+                          {% if segmento.frecuencia_semanas %}
+                            Cada {{ segmento.frecuencia_semanas }} semanas
+                          {% else %}
+                            {{ segmento.frecuencia_visita }} visitas
+                          {% endif %}
+                        </td>
+                        <td>{{ segmento.ultima_visita or '-' }}</td>
+                        <td>${{ "{:,.0f}".format(segmento.valor_total) }}</td>
+                        <td><span class="badge badge-success">{{ segmento.scoring }}</span></td>
+                      </tr>
+                      {% else %}
+                      <tr>
+                        <td colspan="7" class="text-center text-muted">No hay clientes recurrentes clasificados</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Nuevos -->
+                <div role="tabpanel" class="tab-pane fade" id="nuevos">
+                  <table class="table table-striped table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Fecha Registro</th>
+                        <th>Valor Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for segmento in segmentos.nuevo %}
+                      {% set cliente = clientes[segmento.cliente_id] %}
+                      <tr>
+                        <td>
+                          {% if cliente.tipo_cliente == 'empresa' %}
+                            {{ cliente.nombre_empresa }}
+                          {% else %}
+                            {{ cliente.nombre }} {{ cliente.apellido }}
+                          {% endif %}
+                        </td>
+                        <td>{{ cliente.correo }}</td>
+                        <td>{{ cliente.telefono }}</td>
+                        <td>{{ cliente.created_at[:10] if cliente.created_at else '-' }}</td>
+                        <td>${{ "{:,.0f}".format(segmento.valor_total) }}</td>
+                      </tr>
+                      {% else %}
+                      <tr>
+                        <td colspan="5" class="text-center text-muted">No hay clientes nuevos clasificados</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Perdidos -->
+                <div role="tabpanel" class="tab-pane fade" id="perdidos">
+                  <table class="table table-striped table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Última Visita</th>
+                        <th>Valor Total</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for segmento in segmentos.perdido %}
+                      {% set cliente = clientes[segmento.cliente_id] %}
+                      <tr>
+                        <td>
+                          {% if cliente.tipo_cliente == 'empresa' %}
+                            {{ cliente.nombre_empresa }}
+                          {% else %}
+                            {{ cliente.nombre }} {{ cliente.apellido }}
+                          {% endif %}
+                        </td>
+                        <td>{{ cliente.correo }}</td>
+                        <td>{{ cliente.telefono }}</td>
+                        <td>{{ segmento.ultima_visita or '-' }}</td>
+                        <td>${{ "{:,.0f}".format(segmento.valor_total) }}</td>
+                        <td>
+                          <button class="btn btn-xs btn-info btn-recuperar-cliente" data-cliente-id="{{ cliente.id }}">
+                            <i class="fa fa-refresh"></i> Recuperar
+                          </button>
+                        </td>
+                      </tr>
+                      {% else %}
+                      <tr>
+                        <td colspan="6" class="text-center text-muted">No hay clientes perdidos clasificados</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Cumpleaños -->
+                <div role="tabpanel" class="tab-pane fade" id="cumpleanos">
+                  <div class="alert alert-info">
+                    <i class="fa fa-info-circle"></i> Clientes que cumplen años este mes. Perfecto momento para ofrecer beneficios especiales.
+                  </div>
+                  <table class="table table-striped table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Fecha de Nacimiento</th>
+                        <th>Segmento</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for segmento in segmentos.cumpleanos %}
+                      {% set cliente = clientes[segmento.cliente_id] %}
+                      <tr>
+                        <td>
+                          {% if cliente.tipo_cliente == 'empresa' %}
+                            {{ cliente.nombre_empresa }}
+                          {% else %}
+                            {{ cliente.nombre }} {{ cliente.apellido }}
+                          {% endif %}
+                        </td>
+                        <td>{{ cliente.correo }}</td>
+                        <td>{{ cliente.telefono }}</td>
+                        <td>{{ segmento.fecha_nacimiento or '-' }}</td>
+                        <td>
+                          {% if segmento.segmento == 'recurrente' %}
+                            <span class="label label-success">Recurrente</span>
+                          {% elif segmento.segmento == 'nuevo' %}
+                            <span class="label label-primary">Nuevo</span>
+                          {% else %}
+                            <span class="label label-default">{{ segmento.segmento }}</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          <button class="btn btn-xs btn-success btn-enviar-beneficio-cumpleanos" data-cliente-id="{{ cliente.id }}">
+                            <i class="fa fa-gift"></i> Enviar Beneficio
+                          </button>
+                        </td>
+                      </tr>
+                      {% else %}
+                      <tr>
+                        <td colspan="6" class="text-center text-muted">No hay clientes cumpliendo años este mes</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

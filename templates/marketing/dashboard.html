@@ -1,0 +1,218 @@
+{% extends "base_site.html" %}
+
+{% block title %}Dashboard Marketing{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-bullhorn"></i> Dashboard Marketing</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <!-- Estadísticas principales -->
+      <div class="row top_tiles">
+        <div class="animated flipInY col-lg-3 col-md-3 col-sm-6 col-xs-12">
+          <div class="tile-stats">
+            <div class="icon"><i class="fa fa-play-circle"></i></div>
+            <div class="count">{{ campanas_activas_count }}</div>
+            <h3>Campañas Activas</h3>
+            <p>En ejecución actualmente</p>
+          </div>
+        </div>
+        <div class="animated flipInY col-lg-3 col-md-3 col-sm-6 col-xs-12">
+          <div class="tile-stats">
+            <div class="icon"><i class="fa fa-money"></i></div>
+            <div class="count">${{ "{:,.0f}".format(total_presupuesto) }}</div>
+            <h3>Presupuesto Total</h3>
+            <p>Presupuesto asignado</p>
+          </div>
+        </div>
+        <div class="animated flipInY col-lg-3 col-md-3 col-sm-6 col-xs-12">
+          <div class="tile-stats">
+            <div class="icon"><i class="fa fa-dollar"></i></div>
+            <div class="count">${{ "{:,.0f}".format(total_gastado) }}</div>
+            <h3>Presupuesto Gastado</h3>
+            <p>Total invertido</p>
+          </div>
+        </div>
+        <div class="animated flipInY col-lg-3 col-md-3 col-sm-6 col-xs-12">
+          <div class="tile-stats">
+            <div class="icon"><i class="fa fa-users"></i></div>
+            <div class="count">{{ clientes_recurrentes_count + clientes_nuevos_count + clientes_perdidos_count }}</div>
+            <h3>Clientes Segmentados</h3>
+            <p>En base de datos</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Segmentación de Clientes -->
+        <div class="col-md-6 col-sm-6 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2><i class="fa fa-tags"></i> Segmentación de Clientes</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <div class="widget_summary">
+                <div class="w_left w_25">
+                  <span>Recurrentes</span>
+                </div>
+                <div class="w_center w_55">
+                  <div class="progress">
+                    <div class="progress-bar bg-green" role="progressbar" style="width: {% if clientes_recurrentes_count + clientes_nuevos_count + clientes_perdidos_count > 0 %}{{ (clientes_recurrentes_count / (clientes_recurrentes_count + clientes_nuevos_count + clientes_perdidos_count) * 100)|round }}{% else %}0{% endif %}%"></div>
+                  </div>
+                </div>
+                <div class="w_right w_20">
+                  <span>{{ clientes_recurrentes_count }}</span>
+                </div>
+                <div class="clearfix"></div>
+              </div>
+
+              <div class="widget_summary">
+                <div class="w_left w_25">
+                  <span>Nuevos</span>
+                </div>
+                <div class="w_center w_55">
+                  <div class="progress">
+                    <div class="progress-bar bg-blue" role="progressbar" style="width: {% if clientes_recurrentes_count + clientes_nuevos_count + clientes_perdidos_count > 0 %}{{ (clientes_nuevos_count / (clientes_recurrentes_count + clientes_nuevos_count + clientes_perdidos_count) * 100)|round }}{% else %}0{% endif %}%"></div>
+                  </div>
+                </div>
+                <div class="w_right w_20">
+                  <span>{{ clientes_nuevos_count }}</span>
+                </div>
+                <div class="clearfix"></div>
+              </div>
+
+              <div class="widget_summary">
+                <div class="w_left w_25">
+                  <span>Perdidos</span>
+                </div>
+                <div class="w_center w_55">
+                  <div class="progress">
+                    <div class="progress-bar bg-red" role="progressbar" style="width: {% if clientes_recurrentes_count + clientes_nuevos_count + clientes_perdidos_count > 0 %}{{ (clientes_perdidos_count / (clientes_recurrentes_count + clientes_nuevos_count + clientes_perdidos_count) * 100)|round }}{% else %}0{% endif %}%"></div>
+                  </div>
+                </div>
+                <div class="w_right w_20">
+                  <span>{{ clientes_perdidos_count }}</span>
+                </div>
+                <div class="clearfix"></div>
+              </div>
+
+              <div class="widget_summary">
+                <div class="w_left w_25">
+                  <span>Cumpleaños del Mes</span>
+                </div>
+                <div class="w_center w_55">
+                  <div class="progress">
+                    <div class="progress-bar bg-yellow" role="progressbar" style="width: 100%"></div>
+                  </div>
+                </div>
+                <div class="w_right w_20">
+                  <span>{{ cumpleanos_mes_count }}</span>
+                </div>
+                <div class="clearfix"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Últimas Campañas -->
+        <div class="col-md-6 col-sm-6 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2><i class="fa fa-bullseye"></i> Últimas Campañas</h2>
+              <ul class="nav navbar-right panel_toolbox">
+                <li><a href="/marketing/campanas/nueva" class="btn btn-success btn-xs"><i class="fa fa-plus"></i> Nueva</a></li>
+              </ul>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Plataforma</th>
+                    <th>Estado</th>
+                    <th>Presupuesto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for campana in campanas %}
+                  <tr>
+                    <td>{{ campana.nombre }}</td>
+                    <td><span class="label label-info">{{ campana.plataforma }}</span></td>
+                    <td>
+                      {% if campana.estado == 'activa' %}
+                        <span class="label label-success">Activa</span>
+                      {% elif campana.estado == 'pausada' %}
+                        <span class="label label-warning">Pausada</span>
+                      {% else %}
+                        <span class="label label-default">Borrador</span>
+                      {% endif %}
+                    </td>
+                    <td>${{ "{:,.0f}".format(campana.presupuesto) }}</td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">No hay campañas registradas</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accesos rápidos -->
+      <div class="row">
+        <div class="col-md-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2><i class="fa fa-bolt"></i> Accesos Rápidos</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <div class="row">
+                <div class="col-md-3 col-sm-4 col-xs-6">
+                  <a href="/marketing/campanas/nueva" class="btn btn-primary btn-lg btn-block">
+                    <i class="fa fa-plus-circle"></i><br>Nueva Campaña
+                  </a>
+                </div>
+                <div class="col-md-3 col-sm-4 col-xs-6">
+                  <a href="/marketing/clientes/base-datos" class="btn btn-success btn-lg btn-block">
+                    <i class="fa fa-database"></i><br>Base de Datos
+                  </a>
+                </div>
+                <div class="col-md-3 col-sm-4 col-xs-6">
+                  <a href="/marketing/integraciones/meta-pixel" class="btn btn-info btn-lg btn-block">
+                    <i class="fa fa-facebook"></i><br>Meta Pixel
+                  </a>
+                </div>
+                <div class="col-md-3 col-sm-4 col-xs-6">
+                  <a href="/marketing/integraciones/whatsapp" class="btn btn-success btn-lg btn-block">
+                    <i class="fa fa-whatsapp"></i><br>WhatsApp
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

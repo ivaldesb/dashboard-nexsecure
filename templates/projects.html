@@ -1,0 +1,800 @@
+{% extends "base_site.html" %}
+
+{% block title %} Proyectos {% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3>Proyectos <small>Listing design</small></h3>
+        </div>
+
+        <div class="title_right">
+          <div class="col-md-5 col-sm-5 col-xs-12 form-group pull-right top_search">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Search for...">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button">Go!</button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Proyectos</h2>
+              <ul class="nav navbar-right panel_toolbox">
+                {% if is_admin(current_user) or not is_cliente(current_user) %}
+                <li class="dropdown">
+                  <a href="#" class="btn btn-success btn-xs" title="Añadir proyecto" style="color:white; margin-left:8px;" data-toggle="modal" data-target="#modalAddProyecto">
+                    <i class="fa fa-plus"></i> Nuevo Proyecto
+                  </a>
+                </li>
+                {% endif %}
+              </ul>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content" data-can-manage="{% if is_admin(current_user) or not is_cliente(current_user) %}true{% else %}false{% endif %}">
+
+              <!-- <p>Simple table with project listing with progress and editing options</p> -->
+
+              <!-- start project list -->
+              <table class="table table-striped projects">
+                <thead>
+                  <tr>
+                    <th style="width: 1%">#</th>
+                    <th style="width: 20%">Nombre pryecto</th>
+                    <th>Equipo</th>
+                    <th>Cliente Presupuesto</th>
+                    <th>Progreso</th>
+                    <th>Estado</th>
+                    <th style="width: 20%">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if proyectos %}
+                    {% for proyecto in proyectos %}
+                    <tr data-proyecto-id="{{ proyecto.id }}">
+                      <td>{{ loop.index }}</td>
+                      <td>
+                        <a>{{ proyecto.nombre }}</a>
+                        <br />
+                        <small>Created {{ proyecto.created_at }}</small>
+                      </td>
+                      <td>
+                        <ul class="list-inline">
+                          {% if proyecto.asignados %}
+                            {% for asignado in proyecto.asignados %}
+                            <li title="{{ asignado.nombre }} ({{ asignado.email }})">
+                              <img src="/static/images/user.png" class="avatar" alt="Avatar">
+                            </li>
+                            {% endfor %}
+                          {% else %}
+                            <li>
+                              <img src="/static/images/user.png" class="avatar" alt="Avatar">
+                            </li>
+                          {% endif %}
+                        </ul>
+                        {% if proyecto.asignados %}
+                        <small style="display: block; margin-top: 5px; color: #666;">
+                          {% for asignado in proyecto.asignados[:3] %}
+                            {{ asignado.nombre }}{% if not loop.last %}, {% endif %}
+                          {% endfor %}
+                          {% if proyecto.asignados|length > 3 %}
+                            y {{ proyecto.asignados|length - 3 }} más
+                          {% endif %}
+                        </small>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if proyecto.cliente_presupuesto %}
+                          <strong>{{ proyecto.cliente_presupuesto }}</strong>
+                          {% if proyecto.cliente_presupuesto_email %}
+                          <br>
+                          <small class="text-muted">{{ proyecto.cliente_presupuesto_email }}</small>
+                          {% endif %}
+                        {% else %}
+                          <span class="text-muted">Sin cliente asignado</span>
+                        {% endif %}
+                      </td>
+                      <td class="project_progress">
+                        <div class="progress progress_sm">
+                          <div class="progress-bar bg-green" role="progressbar" data-transitiongoal="{{ proyecto.progreso }}"></div>
+                        </div>
+                        <small>{{ proyecto.progreso }}% Completado</small>
+                      </td>
+                      <td>
+                        {% if proyecto.estado == 'finalizado' %}
+                          <button type="button" class="btn btn-success btn-xs">Finalizado</button>
+                        {% elif proyecto.estado == 'en_desarrollo' %}
+                          <button type="button" class="btn btn-primary btn-xs">En desarrollo</button>
+                        {% elif proyecto.estado == 'espera_aprobacion' %}
+                          <button type="button" class="btn btn-dark btn-xs">Espera Aprobación</button>
+                        {% elif proyecto.estado == 'espera_pago' %}
+                          <button type="button" class="btn btn-warning btn-xs">Espera de Pago</button>
+                        {% elif proyecto.estado == 'espera_ppto' %}
+                          <button type="button" class="btn btn-info btn-xs">Espera PPTO</button>
+                        {% elif proyecto.estado == 'soporte' %}
+                          <button type="button" class="btn btn-warning btn-xs">Soporte</button>
+                        {% else %}
+                          <button type="button" class="btn btn-default btn-xs">{{ proyecto.estado }}</button>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <a href="/project_detail?id={{ proyecto.id }}" class="btn btn-primary btn-xs"><i class="fa fa-folder"></i> Ver </a>
+                        {% if is_admin(current_user) or not is_cliente(current_user) %}
+                        <a href="#" class="btn btn-info btn-xs btn-edit-proyecto" data-proyecto-id="{{ proyecto.id }}"><i class="fa fa-pencil"></i> Editar </a>
+                        <a href="#" class="btn btn-danger btn-xs btn-delete-proyecto" data-proyecto-id="{{ proyecto.id }}"><i class="fa fa-trash-o"></i> Eliminar </a>
+                        {% endif %}
+                        {% if is_cliente(current_user) and proyecto.estado == 'espera_aprobacion' %}
+                        <button type="button" class="btn btn-success btn-xs btn-aprobar-proyecto" data-proyecto-id="{{ proyecto.id }}" style="margin-top: 2px;">
+                          <i class="fa fa-check"></i> Aprobar
+                        </button>
+                        <button type="button" class="btn btn-danger btn-xs btn-rechazar-proyecto" data-proyecto-id="{{ proyecto.id }}" style="margin-top: 2px;">
+                          <i class="fa fa-times"></i> Rechazar
+                        </button>
+                        {% endif %}
+                        {% if is_cliente(current_user) and proyecto.estado == 'espera_pago' %}
+                        <button type="button" class="btn btn-success btn-xs btn-pago-web" data-proyecto-id="{{ proyecto.id }}" style="margin-top: 2px;">
+                          <i class="fa fa-credit-card"></i> Pago Web
+                        </button>
+                        <button type="button" class="btn btn-info btn-xs btn-transferencia" data-proyecto-id="{{ proyecto.id }}" style="margin-top: 2px;">
+                          <i class="fa fa-bank"></i> Transferencia
+                        </button>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td colspan="7" class="text-center">No hay proyectos asignados</td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+              <!-- end project list -->
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Modal para crear/editar proyecto -->
+  {% if is_admin(current_user) or not is_cliente(current_user) %}
+  <div class="modal fade" id="modalAddProyecto" tabindex="-1" role="dialog" aria-labelledby="modalAddProyectoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <form id="addProyectoForm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalAddProyectoLabel">Nuevo Proyecto</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="edit_proyecto_id" id="edit_proyecto_id">
+            <div class="form-group">
+              <label for="nombre_proyecto">Nombre del Proyecto</label>
+              <input type="text" class="form-control" name="nombre" id="nombre_proyecto" required>
+            </div>
+            <div class="form-group">
+              <label for="descripcion_proyecto">Descripción</label>
+              <textarea class="form-control" name="descripcion" id="descripcion_proyecto" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="estado_proyecto">Estado</label>
+              <select class="form-control" name="estado" id="estado_proyecto" required>
+                <option value="en_desarrollo">En desarrollo</option>
+                <option value="espera_aprobacion">Espera Aprobación</option>
+                <option value="espera_pago">Espera de Pago</option>
+                <option value="espera_ppto">Espera PPTO</option>
+                <option value="finalizado">Finalizado</option>
+                <option value="soporte">Soporte</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="progreso_proyecto">Progreso (%)</label>
+              <input type="number" class="form-control" name="progreso" id="progreso_proyecto" min="0" max="100" value="0" required>
+            </div>
+            <div class="form-group">
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="incluye_mantenimiento" id="incluye_mantenimiento" value="1">
+                  Incluye Mantenimiento
+                </label>
+              </div>
+              <small class="form-text text-muted">Si está marcado, se habilitará una pestaña de mantenimiento en el detalle del proyecto</small>
+            </div>
+            <div class="form-group">
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" name="es_solo_mantenimiento" id="es_solo_mantenimiento" value="1">
+                  Proyecto Solo de Mantenimiento
+                </label>
+              </div>
+              <small class="form-text text-muted">Marque esta opción si el proyecto es únicamente de mantenimiento con pago mensual recurrente</small>
+            </div>
+            <div class="form-group" id="ciclo_pago_group" style="display: none;">
+              <label for="ciclo_pago_mensual">Ciclo de Pago Mensual ($)</label>
+              <input type="number" class="form-control" name="ciclo_pago_mensual" id="ciclo_pago_mensual" min="0" step="0.01" value="0">
+              <small class="form-text text-muted">Monto mensual que se cobrará por el servicio de mantenimiento</small>
+            </div>
+            <div class="form-group" style="position: relative;">
+              <label for="buscar_asignados">Asignar a Usuarios/Clientes</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="buscar_asignados" placeholder="Buscar por nombre, email o RUT... (mínimo 2 caracteres)">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" id="btnBuscarAsignados">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+              <div id="resultados_busqueda" class="list-group" style="max-height: 200px; overflow-y: auto; margin-top: 5px; display: none; position: absolute; z-index: 1000; width: calc(100% - 30px); background-color: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                <!-- Los resultados aparecerán aquí -->
+              </div>
+              <div id="asignados_seleccionados" style="margin-top: 15px;">
+                <label>Asignados seleccionados:</label>
+                <div id="lista_asignados" style="min-height: 40px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background-color: #f9f9f9;">
+                  <p class="text-muted" style="margin: 0;">No hay asignados seleccionados</p>
+                </div>
+              </div>
+            </div>
+            <div class="form-group" style="position: relative;">
+              <label for="buscar_cliente_presupuesto_proyecto">Cliente para Presupuesto (Opcional)</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="buscar_cliente_presupuesto_proyecto" placeholder="Buscar cliente para el presupuesto... (mínimo 2 caracteres)">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" id="btnBuscarClientePresupuestoProyecto">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+              <div id="resultados_busqueda_cliente_presupuesto" class="list-group" style="max-height: 200px; overflow-y: auto; margin-top: 5px; display: none; position: absolute; z-index: 1000; width: calc(100% - 30px); background-color: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                <!-- Los resultados aparecerán aquí -->
+              </div>
+              <div id="cliente_presupuesto_seleccionado" style="margin-top: 15px;">
+                <label>Cliente seleccionado para presupuesto:</label>
+                <div style="min-height: 40px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background-color: #f9f9f9;">
+                  <p class="text-muted" style="margin: 0;">No hay cliente seleccionado para el presupuesto</p>
+                </div>
+              </div>
+              <small class="form-text text-muted">Este cliente aparecerá automáticamente en el presupuesto del proyecto (no forma parte del equipo)</small>
+              <input type="hidden" id="cliente_presupuesto_id" name="cliente_presupuesto_id">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success">Guardar</button>
+          </div>
+          <div id="addProyectoMsg"></div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Modal de Datos de Transferencia -->
+  <div class="modal fade" id="modalTransferencia" tabindex="-1" role="dialog" aria-labelledby="modalTransferenciaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTransferenciaLabel">Datos para Transferencia Bancaria</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="fa fa-info-circle"></i> Por favor, realiza la transferencia con los siguientes datos:
+          </div>
+          <table class="table table-bordered">
+            <tbody>
+              <tr>
+                <th style="width: 40%; background-color: #f5f5f5;">Banco:</th>
+                <td id="transferencia_banco">Banco de Chile</td>
+              </tr>
+              <tr>
+                <th style="background-color: #f5f5f5;">Tipo de Cuenta:</th>
+                <td id="transferencia_tipo_cuenta">Cuenta Corriente</td>
+              </tr>
+              <tr>
+                <th style="background-color: #f5f5f5;">Número de Cuenta:</th>
+                <td id="transferencia_numero_cuenta"><strong>1234567890</strong></td>
+              </tr>
+              <tr>
+                <th style="background-color: #f5f5f5;">RUT:</th>
+                <td id="transferencia_rut"><strong>76.123.456-7</strong></td>
+              </tr>
+              <tr>
+                <th style="background-color: #f5f5f5;">Razón Social:</th>
+                <td id="transferencia_razon_social">NexSecure SpA</td>
+              </tr>
+              <tr>
+                <th style="background-color: #f5f5f5;">Email para comprobante:</th>
+                <td id="transferencia_email">facturacion@nexsecure.cl</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="alert alert-warning" style="margin-top: 15px;">
+            <i class="fa fa-exclamation-triangle"></i> <strong>Importante:</strong> Una vez realizada la transferencia, por favor envía el comprobante al email indicado con el número de proyecto como referencia.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+  <script>
+    $(function () {
+      // Inicializar progress bars
+      $('.progress-bar').each(function() {
+        var goal = $(this).data('transitiongoal');
+        $(this).css('width', goal + '%');
+      });
+
+      // Obtener permisos desde el atributo data
+      var canManageProjects = $('.x_content').data('can-manage') === 'true' || $('.x_content').data('can-manage') === true;
+
+      if (canManageProjects) {
+      // Variables para almacenar asignados seleccionados
+      var asignadosSeleccionados = [];
+      
+      // Variable para almacenar cliente del presupuesto seleccionado
+      var clientePresupuestoSeleccionado = null;
+      
+      // Búsqueda de usuarios/clientes
+      var searchTimeout;
+      $('#buscar_asignados').on('input', function() {
+        var query = $(this).val();
+        if (query.length < 2) {
+          $('#resultados_busqueda').hide().empty();
+          return;
+        }
+        
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+          $.ajax({
+            url: '/search_usuarios_clientes',
+            type: 'GET',
+            data: { q: query },
+            success: function(response) {
+              var $resultados = $('#resultados_busqueda');
+              $resultados.empty();
+              
+              if (response.results && response.results.length > 0) {
+                response.results.forEach(function(item) {
+                  var asignadoId = item.tipo + '_' + item.id;
+                  // Verificar si ya está seleccionado
+                  var yaSeleccionado = asignadosSeleccionados.some(function(a) {
+                    return a.id === asignadoId;
+                  });
+                  
+                  if (!yaSeleccionado) {
+                    var $item = $('<div class="list-group-item" style="cursor: pointer; padding: 10px;">' +
+                      '<strong>' + item.display + '</strong>' +
+                      '</div>');
+                    $item.hover(
+                      function() { $(this).css('background-color', '#f5f5f5'); },
+                      function() { $(this).css('background-color', 'white'); }
+                    );
+                    $item.on('click', function() {
+                      agregarAsignado(item, asignadoId);
+                      $('#buscar_asignados').val('');
+                      $('#resultados_busqueda').hide().empty();
+                    });
+                    $resultados.append($item);
+                  }
+                });
+                $resultados.show();
+              } else {
+                $resultados.html('<div class="list-group-item text-muted">No se encontraron resultados</div>').show();
+              }
+            },
+            error: function() {
+              $('#resultados_busqueda').html('<div class="list-group-item text-danger">Error en la búsqueda</div>').show();
+            }
+          });
+        }, 300);
+      });
+      
+      $('#btnBuscarAsignados').on('click', function() {
+        $('#buscar_asignados').trigger('input');
+      });
+      
+      // Función para agregar asignado
+      function agregarAsignado(item, asignadoId) {
+        if (asignadosSeleccionados.some(function(a) { return a.id === asignadoId; })) {
+          return; // Ya está seleccionado
+        }
+        
+        asignadosSeleccionados.push({
+          id: asignadoId,
+          tipo: item.tipo,
+          nombre: item.nombre,
+          email: item.email,
+          display: item.display
+        });
+        
+        actualizarListaAsignados();
+      }
+      
+      // Función para eliminar asignado
+      function eliminarAsignado(asignadoId) {
+        asignadosSeleccionados = asignadosSeleccionados.filter(function(a) {
+          return a.id !== asignadoId;
+        });
+        actualizarListaAsignados();
+      }
+      
+      // Función para actualizar la lista visual de asignados
+      function actualizarListaAsignados() {
+        var $lista = $('#lista_asignados');
+        $lista.empty();
+        
+        if (asignadosSeleccionados.length === 0) {
+          $lista.html('<p class="text-muted" style="margin: 0;">No hay asignados seleccionados</p>');
+        } else {
+          asignadosSeleccionados.forEach(function(asignado) {
+            var $badge = $('<span class="badge" style="margin: 5px; padding: 8px; font-size: 12px; background-color: #337ab7;">' +
+              asignado.display + 
+              ' <button type="button" class="close" style="margin-left: 5px;" data-asignado-id="' + asignado.id + '">&times;</button>' +
+              '</span>');
+            $badge.find('button').on('click', function() {
+              eliminarAsignado($(this).data('asignado-id'));
+            });
+            $lista.append($badge);
+          });
+        }
+      }
+      
+      // Búsqueda de cliente para presupuesto
+      var searchTimeoutClientePresupuesto;
+      $('#buscar_cliente_presupuesto_proyecto').on('input', function() {
+        var query = $(this).val();
+        if (query.length < 2) {
+          $('#resultados_busqueda_cliente_presupuesto').hide().empty();
+          return;
+        }
+        
+        clearTimeout(searchTimeoutClientePresupuesto);
+        searchTimeoutClientePresupuesto = setTimeout(function() {
+          $.ajax({
+            url: '/search_usuarios_clientes',
+            type: 'GET',
+            data: { q: query },
+            success: function(response) {
+              var $resultados = $('#resultados_busqueda_cliente_presupuesto');
+              $resultados.empty();
+              
+              if (response.results && response.results.length > 0) {
+                // Filtrar solo clientes
+                var clientes = response.results.filter(function(item) {
+                  return item.tipo === 'cliente';
+                });
+                
+                if (clientes.length > 0) {
+                  clientes.forEach(function(item) {
+                    var $item = $('<div class="list-group-item" style="cursor: pointer; padding: 10px;">' +
+                      '<strong>' + item.display + '</strong>' +
+                      '</div>');
+                    $item.hover(
+                      function() { $(this).css('background-color', '#f5f5f5'); },
+                      function() { $(this).css('background-color', 'white'); }
+                    );
+                    $item.on('click', function() {
+                      clientePresupuestoSeleccionado = item;
+                      $('#cliente_presupuesto_id').val(item.id);
+                      actualizarClientePresupuesto();
+                      $('#buscar_cliente_presupuesto_proyecto').val('');
+                      $('#resultados_busqueda_cliente_presupuesto').hide().empty();
+                    });
+                    $resultados.append($item);
+                  });
+                  $resultados.show();
+                } else {
+                  $resultados.html('<div class="list-group-item text-muted">No se encontraron clientes</div>').show();
+                }
+              } else {
+                $resultados.html('<div class="list-group-item text-muted">No se encontraron resultados</div>').show();
+              }
+            },
+            error: function() {
+              $('#resultados_busqueda_cliente_presupuesto').html('<div class="list-group-item text-danger">Error en la búsqueda</div>').show();
+            }
+          });
+        }, 300);
+      });
+      
+      $('#btnBuscarClientePresupuestoProyecto').on('click', function() {
+        $('#buscar_cliente_presupuesto_proyecto').trigger('input');
+      });
+      
+      // Función para actualizar la visualización del cliente del presupuesto
+      function actualizarClientePresupuesto() {
+        var $div = $('#cliente_presupuesto_seleccionado').find('div');
+        if ($div.length === 0) {
+          $div = $('#cliente_presupuesto_seleccionado');
+        }
+        $div.empty();
+        
+        if (clientePresupuestoSeleccionado) {
+          var $badge = $('<span class="badge" style="margin: 5px; padding: 8px; font-size: 12px; background-color: #5cb85c;">' +
+            clientePresupuestoSeleccionado.display + 
+            ' <button type="button" class="close" style="margin-left: 5px;">&times;</button>' +
+            '</span>');
+          $badge.find('button').on('click', function() {
+            clientePresupuestoSeleccionado = null;
+            $('#cliente_presupuesto_id').val('');
+            actualizarClientePresupuesto();
+          });
+          $div.append($badge);
+        } else {
+          $div.html('<p class="text-muted" style="margin: 0;">No hay cliente seleccionado para el presupuesto</p>');
+        }
+      }
+      
+      // Inicializar visualización
+      actualizarClientePresupuesto();
+      
+      // Cerrar resultados al hacer clic fuera
+      $(document).on('click', function(e) {
+        if (!$(e.target).closest('#buscar_asignados, #resultados_busqueda, #btnBuscarAsignados').length) {
+          $('#resultados_busqueda').hide();
+        }
+        if (!$(e.target).closest('#buscar_cliente_presupuesto_proyecto, #resultados_busqueda_cliente_presupuesto, #btnBuscarClientePresupuestoProyecto').length) {
+          $('#resultados_busqueda_cliente_presupuesto').hide();
+        }
+      });
+      
+      $('#addProyectoForm').on('submit', function (e) {
+        e.preventDefault();
+        var $form = $(this);
+        var $msg = $('#addProyectoMsg');
+        var proyectoId = $('#edit_proyecto_id').val();
+        var url = proyectoId ? '/edit_proyecto/' + proyectoId : '/add_proyecto';
+        
+        // Agregar asignados al formulario
+        var formData = $form.serialize();
+        asignadosSeleccionados.forEach(function(asignado) {
+          formData += '&asignados[]=' + encodeURIComponent(asignado.id);
+        });
+        
+        // Agregar cliente del presupuesto si está seleccionado
+        if (clientePresupuestoSeleccionado && $('#cliente_presupuesto_id').val()) {
+          formData += '&cliente_presupuesto_id=' + encodeURIComponent($('#cliente_presupuesto_id').val());
+        }
+        
+        $.ajax({
+          url: url,
+          type: 'POST',
+          data: formData,
+          success: function (response) {
+            if (response.status === 'success') {
+              $msg.html('<div class="alert alert-success">' + response.message + '</div>');
+              setTimeout(function() {
+                location.reload();
+              }, 1000);
+            } else {
+              $msg.html('<div class="alert alert-danger">' + response.message + '</div>');
+            }
+          },
+          error: function (xhr) {
+            $msg.html('<div class="alert alert-danger">Error al guardar proyecto</div>');
+          }
+        });
+      });
+
+      $('.btn-delete-proyecto').on('click', function() {
+        if (!confirm('¿Seguro que deseas eliminar este proyecto?')) return;
+        var proyectoId = $(this).data('proyecto-id');
+        $.ajax({
+          url: '/delete_proyecto/' + proyectoId,
+          type: 'POST',
+          success: function (response) {
+            if (response.status === 'success') {
+              $('tr[data-proyecto-id="' + proyectoId + '"]').fadeOut(300, function() {
+                $(this).remove();
+              });
+            } else {
+              alert(response.message || 'Error al eliminar proyecto');
+            }
+          },
+          error: function () {
+            alert('Error al eliminar proyecto');
+          }
+        });
+      });
+
+      // Usar delegación de eventos para que funcione con navegación AJAX
+      $(document).on('click', '.btn-edit-proyecto', function() {
+        var proyectoId = $(this).data('proyecto-id');
+        // Cargar datos del proyecto
+        $.ajax({
+          url: '/get_proyecto/' + proyectoId,
+          type: 'GET',
+          success: function(response) {
+            if (response.status === 'success') {
+              var proyecto = response.proyecto;
+              
+              // Llenar formulario con datos del proyecto
+              $('#modalAddProyectoLabel').text('Editar Proyecto');
+              $('#edit_proyecto_id').val(proyecto.id);
+              $('#nombre_proyecto').val(proyecto.nombre);
+              $('#descripcion_proyecto').val(proyecto.descripcion || '');
+              $('#estado_proyecto').val(proyecto.estado);
+              $('#progreso_proyecto').val(proyecto.progreso);
+              $('#incluye_mantenimiento').prop('checked', proyecto.incluye_mantenimiento || false);
+              $('#es_solo_mantenimiento').prop('checked', proyecto.es_solo_mantenimiento || false);
+              $('#ciclo_pago_mensual').val(proyecto.ciclo_pago_mensual || 0);
+              
+              // Mostrar/ocultar campo de ciclo de pago según es_solo_mantenimiento
+              if (proyecto.es_solo_mantenimiento) {
+                $('#ciclo_pago_group').show();
+              } else {
+                $('#ciclo_pago_group').hide();
+              }
+              
+              // Cargar asignados
+              asignadosSeleccionados = [];
+              if (proyecto.asignados && proyecto.asignados.length > 0) {
+                proyecto.asignados.forEach(function(asignado) {
+                  asignadosSeleccionados.push({
+                    id: asignado.id,
+                    tipo: asignado.tipo,
+                    nombre: asignado.nombre,
+                    email: asignado.email,
+                    display: asignado.display
+                  });
+                });
+              }
+              actualizarListaAsignados();
+              
+              // Cargar cliente del presupuesto si existe
+              clientePresupuestoSeleccionado = null;
+              if (proyecto.cliente_presupuesto_id && proyecto.cliente_presupuesto) {
+                clientePresupuestoSeleccionado = proyecto.cliente_presupuesto;
+                $('#cliente_presupuesto_id').val(proyecto.cliente_presupuesto_id);
+              } else {
+                $('#cliente_presupuesto_id').val('');
+              }
+              actualizarClientePresupuesto();
+              
+              $('#modalAddProyecto').modal('show');
+            } else {
+              alert('Error al cargar los datos del proyecto');
+            }
+          },
+          error: function() {
+            alert('Error al cargar los datos del proyecto');
+          }
+        });
+      });
+
+      // Limpiar formulario al abrir modal para nuevo proyecto
+      $('a[data-target="#modalAddProyecto"]').on('click', function() {
+        $('#addProyectoMsg').html('');
+        $('#edit_proyecto_id').val('');
+        $('#modalAddProyectoLabel').text('Nuevo Proyecto');
+        $('#addProyectoForm')[0].reset();
+        asignadosSeleccionados = [];
+        actualizarListaAsignados();
+        $('#resultados_busqueda').hide().empty();
+        $('#buscar_asignados').val('');
+        clientePresupuestoSeleccionado = null;
+        $('#cliente_presupuesto_id').val('');
+        actualizarClientePresupuesto();
+        $('#resultados_busqueda_cliente_presupuesto').hide().empty();
+        $('#buscar_cliente_presupuesto_proyecto').val('');
+      });
+      
+      // Limpiar formulario al cerrar modal
+      $('#modalAddProyecto').on('hidden.bs.modal', function () {
+        $('#addProyectoMsg').html('');
+        $('#edit_proyecto_id').val('');
+        $('#modalAddProyectoLabel').text('Nuevo Proyecto');
+        $('#addProyectoForm')[0].reset();
+        asignadosSeleccionados = [];
+        actualizarListaAsignados();
+        $('#resultados_busqueda').hide().empty();
+        $('#buscar_asignados').val('');
+        clientePresupuestoSeleccionado = null;
+        $('#cliente_presupuesto_id').val('');
+        actualizarClientePresupuesto();
+        $('#resultados_busqueda_cliente_presupuesto').hide().empty();
+        $('#buscar_cliente_presupuesto_proyecto').val('');
+        $('#es_solo_mantenimiento').prop('checked', false);
+        $('#ciclo_pago_mensual').val(0);
+        $('#ciclo_pago_group').hide();
+      });
+      
+      // Mostrar/ocultar campo de ciclo de pago según checkbox es_solo_mantenimiento
+      $('#es_solo_mantenimiento').on('change', function() {
+        if ($(this).is(':checked')) {
+          $('#ciclo_pago_group').show();
+        } else {
+          $('#ciclo_pago_group').hide();
+          $('#ciclo_pago_mensual').val(0);
+        }
+      });
+      } 
+      
+      // Botones de aprobación/rechazo de presupuesto (solo para clientes)
+      $(document).on('click', '.btn-aprobar-proyecto', function() {
+        if (!confirm('¿Estás seguro de aprobar este presupuesto?')) {
+          return;
+        }
+        var proyectoId = $(this).data('proyecto-id');
+        $.ajax({
+          url: '/aprobar_proyecto/' + proyectoId,
+          type: 'POST',
+          success: function(response) {
+            if (response.status === 'success') {
+              alert(response.message || 'Presupuesto aprobado correctamente');
+              location.reload();
+            } else {
+              alert(response.message || 'Error al aprobar el presupuesto');
+            }
+          },
+          error: function() {
+            alert('Error al aprobar el presupuesto');
+          }
+        });
+      });
+      
+      $(document).on('click', '.btn-rechazar-proyecto', function() {
+        var motivo = prompt('Por favor, indica el motivo del rechazo:');
+        if (!motivo || motivo.trim() === '') {
+          alert('Debes indicar un motivo para rechazar el presupuesto');
+          return;
+        }
+        var proyectoId = $(this).data('proyecto-id');
+        $.ajax({
+          url: '/rechazar_proyecto/' + proyectoId,
+          type: 'POST',
+          data: { motivo: motivo },
+          success: function(response) {
+            if (response.status === 'success') {
+              alert(response.message || 'Presupuesto rechazado correctamente');
+              location.reload();
+            } else {
+              alert(response.message || 'Error al rechazar el presupuesto');
+            }
+          },
+          error: function() {
+            alert('Error al rechazar el presupuesto');
+          }
+        });
+      });
+      
+      // Botón de Pago Web
+      $(document).on('click', '.btn-pago-web', function() {
+        var proyectoId = $(this).data('proyecto-id');
+        // Redirigir al portal de pago
+        window.location.href = '/portal_pago/' + proyectoId;
+      });
+      
+      // Botón de Transferencia
+      $(document).on('click', '.btn-transferencia', function() {
+        $('#modalTransferencia').modal('show');
+      });
+    });
+  </script>
+{% endblock javascripts %}

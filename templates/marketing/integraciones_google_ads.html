@@ -1,0 +1,117 @@
+{% extends "base_site.html" %}
+
+{% block title %}Google Ads - Integraciones{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-google"></i> Google Ads</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Configuración de Google Ads</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              {% if configuracion %}
+              <div class="alert alert-success">
+                <i class="fa fa-check-circle"></i> Google Ads está configurado
+              </div>
+              <div class="form-horizontal form-label-left">
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12">Estado</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    {% if configuracion.activa %}
+                      <span class="label label-success">Activa</span>
+                    {% else %}
+                      <span class="label label-danger">Inactiva</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% else %}
+              <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i> Google Ads no está configurado. Por favor, configura la integración.
+              </div>
+              {% endif %}
+
+              <div class="ln_solid"></div>
+              <h3>Integración con Google Ads API</h3>
+              <p>Conecta tu cuenta de Google Ads para automatizar campañas y obtener métricas en tiempo real.</p>
+
+              <form method="POST" action="/marketing/integraciones/google-ads/guardar" class="form-horizontal form-label-left">
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="customer_id">Customer ID</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="customer_id" name="customer_id" class="form-control" 
+                           placeholder="123-456-7890"
+                           value="{{ configuracion.configuracion.customer_id if configuracion and configuracion.configuracion else '' }}">
+                    <small class="help-block">Tu Customer ID de Google Ads</small>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="developer_token">Developer Token</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="developer_token" name="developer_token" class="form-control"
+                           value="{{ configuracion.configuracion.developer_token if configuracion and configuracion.configuracion else '' }}">
+                    <small class="help-block">Token de desarrollador de Google Ads</small>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="client_id">Client ID</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="client_id" name="client_id" class="form-control"
+                           value="{{ configuracion.configuracion.client_id if configuracion and configuracion.configuracion else '' }}">
+                    <small class="help-block">OAuth Client ID</small>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="client_secret">Client Secret</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="client_secret" name="client_secret" class="form-control"
+                           value="{{ configuracion.configuracion.client_secret if configuracion and configuracion.configuracion else '' }}">
+                    <small class="help-block">OAuth Client Secret</small>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="activa">Activar Integración</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="checkbox" id="activa" name="activa" {% if configuracion and configuracion.activa %}checked{% endif %} class="flat">
+                  </div>
+                </div>
+
+                <div class="ln_solid"></div>
+                <div class="form-group">
+                  <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                    <button type="submit" class="btn btn-success"><i class="fa fa-save"></i> Guardar Configuración</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

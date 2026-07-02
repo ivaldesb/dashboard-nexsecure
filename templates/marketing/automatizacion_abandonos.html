@@ -1,0 +1,76 @@
+{% extends "base_site.html" %}
+
+{% block title %}Recuperación de Abandonos{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-shopping-cart"></i> Recuperación de Abandonos</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Campañas de Recuperación</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle"></i> Recupera clientes que abandonaron su consulta o no completaron una acción.
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>Abandonos de Consultas</h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <p>Clientes que iniciaron un proceso pero no lo completaron.</p>
+                      <button class="btn btn-primary">Ver Abandonos</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>Abandonos de Presupuesto</h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <p>Clientes que recibieron presupuesto pero no respondieron.</p>
+                      <button class="btn btn-primary">Ver Abandonos</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ln_solid"></div>
+              <h4>Crear Campaña de Recuperación</h4>
+              <p>Configura campañas automáticas para recuperar clientes que abandonaron.</p>
+              <a href="/marketing/campanas/nueva?tipo=recuperacion" class="btn btn-success">
+                <i class="fa fa-plus"></i> Nueva Campaña de Recuperación
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

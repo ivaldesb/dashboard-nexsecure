@@ -1,0 +1,225 @@
+{% extends "base_site.html" %}
+
+{% block content %}
+<div class="right_col" role="main">
+  <div class="">
+    <div class="page-title">
+      <div class="title_left">
+        <h3>Gestión de Incidencias <small>Centro de Soporte</small></h3>
+      </div>
+    </div>
+
+    <div class="clearfix"></div>
+
+    <div class="row">
+      <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+          <div class="x_title">
+            <h2>Incidencias en Curso</h2>
+            <div class="clearfix"></div>
+          </div>
+          <div class="x_content">
+            {% if incidencias %}
+            <div class="table-responsive">
+              <table class="table table-striped jambo_table bulk_action">
+                <thead>
+                  <tr class="headings">
+                    <th class="column-title">ID</th>
+                    <th class="column-title">Proyecto</th>
+                    <th class="column-title">Activo</th>
+                    <th class="column-title">Título</th>
+                    <th class="column-title">Reportada por</th>
+                    <th class="column-title">Fecha</th>
+                    <th class="column-title">Estado</th>
+                    <th class="column-title">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for incidencia in incidencias %}
+                  <tr class="even pointer">
+                    <td>#{{ incidencia.id }}</td>
+                    <td>{{ incidencia.proyecto_nombre or '---' }}</td>
+                    <td>{{ incidencia.activo_nombre or '---' }}</td>
+                    <td><strong>{{ incidencia.titulo }}</strong></td>
+                    <td>{{ incidencia.creador_nombre or '---' }}</td>
+                    <td>{{ incidencia.created_at }}</td>
+                    <td>
+                      <span class="badge badge-{% if incidencia.estado == 'abierta' %}warning{% elif incidencia.estado == 'en_proceso' %}info{% elif incidencia.estado == 'resuelta' %}success{% else %}danger{% endif %}">
+                        {% if incidencia.estado == 'abierta' %}Abierta
+                        {% elif incidencia.estado == 'en_proceso' %}En Proceso
+                        {% elif incidencia.estado == 'resuelta' %}Resuelta
+                        {% else %}{{ incidencia.estado }}{% endif %}
+                      </span>
+                    </td>
+                    <td>
+                      <button class="btn btn-xs btn-primary btn-ver-incidencia" data-incidencia-id="{{ incidencia.id }}" title="Ver Detalles">
+                        <i class="fa fa-eye"></i> Ver
+                      </button>
+                      {% if incidencia.estado != 'resuelta' %}
+                      <button class="btn btn-xs btn-success btn-resolver-incidencia" data-incidencia-id="{{ incidencia.id }}" title="Marcar como Resuelta">
+                        <i class="fa fa-check"></i> Resolver
+                      </button>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+              <i class="fa fa-info-circle"></i> No hay incidencias en curso.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para ver detalles de incidencia -->
+<div class="modal fade" id="modalVerIncidencia" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalles de la Incidencia</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="incidenciaDetalleBody">
+        <!-- Contenido cargado dinámicamente -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" id="btnResolverIncidenciaModal" style="display: none;">
+          <i class="fa fa-check"></i> Marcar como Resuelta
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+{{ super() }}
+<script>
+  $(document).ready(function() {
+    // Ver detalles de incidencia
+    $(document).on('click', '.btn-ver-incidencia', function() {
+      var incidenciaId = $(this).data('incidencia-id');
+      var incidenciaRow = $(this).closest('tr');
+      var incidenciaData = {
+        id: incidenciaId,
+        proyecto: incidenciaRow.find('td:eq(1)').text(),
+        activo: incidenciaRow.find('td:eq(2)').text(),
+        titulo: incidenciaRow.find('td:eq(3)').text(),
+        creador: incidenciaRow.find('td:eq(4)').text(),
+        fecha: incidenciaRow.find('td:eq(5)').text(),
+        estado: incidenciaRow.find('td:eq(6)').text().trim()
+      };
+      
+      // Cargar detalles completos desde el servidor
+      $.ajax({
+        url: '/get_incidencia/' + incidenciaId,
+        type: 'GET',
+        success: function(response) {
+          if (response.status === 'success') {
+            var incidencia = response.incidencia;
+            
+            if (incidencia) {
+              var html = '<div class="panel panel-default">';
+              html += '<div class="panel-heading" style="background-color: ';
+              if (incidencia.estado == 'abierta') html += '#f0ad4e';
+              else if (incidencia.estado == 'en_proceso') html += '#337ab7';
+              else if (incidencia.estado == 'resuelta') html += '#5cb85c';
+              else html += '#d9534f';
+              html += '; color: white;"><h4 style="margin: 0;">' + incidencia.titulo + '</h4></div>';
+              html += '<div class="panel-body">';
+              html += '<p><strong>Proyecto:</strong> ' + (incidencia.proyecto_nombre || '---') + '</p>';
+              if (incidencia.activo_nombre) {
+                html += '<p><strong>Activo:</strong> ' + incidencia.activo_nombre + '</p>';
+              }
+              html += '<p><strong>Reportada por:</strong> ' + (incidencia.creador_nombre || '---') + ' el ' + incidencia.created_at + '</p>';
+              html += '<p><strong>Estado:</strong> <span class="badge badge-';
+              if (incidencia.estado == 'abierta') html += 'warning';
+              else if (incidencia.estado == 'en_proceso') html += 'info';
+              else if (incidencia.estado == 'resuelta') html += 'success';
+              else html += 'danger';
+              html += '">' + incidencia.estado + '</span></p>';
+              html += '<p><strong>Descripción:</strong></p>';
+              html += '<p>' + (incidencia.descripcion || 'Sin descripción') + '</p>';
+              
+              // Comentarios
+              html += '<div style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">';
+              html += '<h5>Comentarios:</h5>';
+              if (incidencia.comentarios && incidencia.comentarios.length > 0) {
+                incidencia.comentarios.forEach(function(comentario) {
+                  html += '<div class="well" style="margin-bottom: 10px; padding: 10px;">';
+                  html += '<strong>' + comentario.autor_nombre + '</strong> ';
+                  html += '<span class="badge badge-' + (comentario.tipo_autor == 'user' ? 'info' : 'success') + '" style="font-size: 10px;">';
+                  html += comentario.autor_tag || 'Usuario';
+                  html += '</span> ';
+                  html += '<small class="text-muted" style="float: right;">' + comentario.created_at + '</small>';
+                  html += '<p style="margin-top: 5px; margin-bottom: 0;">' + comentario.comentario + '</p>';
+                  html += '</div>';
+                });
+              } else {
+                html += '<p class="text-muted">No hay comentarios aún.</p>';
+              }
+              html += '</div>';
+              
+              html += '</div></div>';
+              $('#incidenciaDetalleBody').html(html);
+              
+              // Mostrar botón de resolver si no está resuelta
+              if (incidencia.estado != 'resuelta') {
+                $('#btnResolverIncidenciaModal').show().off('click').on('click', function() {
+                  resolverIncidencia(incidenciaId);
+                });
+              } else {
+                $('#btnResolverIncidenciaModal').hide();
+              }
+              
+              $('#modalVerIncidencia').modal('show');
+            }
+          }
+        },
+        error: function() {
+          alert('Error al cargar los detalles de la incidencia');
+        }
+      });
+    });
+    
+    // Resolver incidencia desde la tabla
+    $(document).on('click', '.btn-resolver-incidencia', function() {
+      var incidenciaId = $(this).data('incidencia-id');
+      if (confirm('¿Estás seguro de marcar esta incidencia como resuelta?')) {
+        resolverIncidencia(incidenciaId);
+      }
+    });
+    
+    // Función para resolver incidencia
+    function resolverIncidencia(incidenciaId) {
+      $.ajax({
+        url: '/update_incidencia_estado/' + incidenciaId,
+        type: 'POST',
+        data: { estado: 'resuelta' },
+        success: function(response) {
+          if (response.status === 'success') {
+            alert('Incidencia marcada como resuelta. El activo asociado ha sido actualizado a "operativo".');
+            location.reload();
+          } else {
+            alert(response.message || 'Error al actualizar el estado');
+          }
+        },
+        error: function() {
+          alert('Error al actualizar el estado de la incidencia');
+        }
+      });
+    }
+  });
+</script>
+{% endblock javascripts %}
+

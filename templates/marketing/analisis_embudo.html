@@ -1,0 +1,115 @@
+{% extends "base_site.html" %}
+
+{% block title %}Embudo de Conversión{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-sitemap"></i> Embudo de Conversión</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Análisis del Embudo de Conversión</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <!-- Visualización del Embudo -->
+              <div class="row" style="margin-bottom: 30px;">
+                <div class="col-md-12">
+                  <div class="embudo-container" style="text-align: center;">
+                    <!-- Impresiones -->
+                    <div class="embudo-step" style="background: #337ab7; color: white; padding: 20px; margin: 10px auto; width: 80%; border-radius: 5px;">
+                      <h3>Impresiones</h3>
+                      <h2>{{ "{:,}".format(embudo.impresiones) }}</h2>
+                      <small>100%</small>
+                    </div>
+                    
+                    <!-- Clicks -->
+                    <div class="embudo-step" style="background: #5bc0de; color: white; padding: 20px; margin: 10px auto; width: 60%; border-radius: 5px;">
+                      <h3>Clicks</h3>
+                      <h2>{{ "{:,}".format(embudo.clicks) }}</h2>
+                      <small>{{ "%.2f"|format(embudo.tasa_clic) }}% (Tasa de Clic)</small>
+                    </div>
+                    
+                    <!-- Conversiones -->
+                    <div class="embudo-step" style="background: #5cb85c; color: white; padding: 20px; margin: 10px auto; width: 40%; border-radius: 5px;">
+                      <h3>Conversiones</h3>
+                      <h2>{{ "{:,}".format(embudo.conversiones) }}</h2>
+                      <small>{{ "%.2f"|format(embudo.tasa_conversion) }}% (Tasa de Conversión)</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Métricas Detalladas -->
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>Métricas Clave</h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <table class="table">
+                        <tr>
+                          <td><strong>Total Impresiones:</strong></td>
+                          <td>{{ "{:,}".format(embudo.impresiones) }}</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Total Clicks:</strong></td>
+                          <td>{{ "{:,}".format(embudo.clicks) }}</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Total Conversiones:</strong></td>
+                          <td>{{ "{:,}".format(embudo.conversiones) }}</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Tasa de Clic (CTR):</strong></td>
+                          <td><span class="label label-info">{{ "%.2f"|format(embudo.tasa_clic) }}%</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Tasa de Conversión:</strong></td>
+                          <td><span class="label label-success">{{ "%.2f"|format(embudo.tasa_conversion) }}%</span></td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>Análisis</h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <p><strong>Pérdida en Clics:</strong> {{ "{:,}".format(embudo.impresiones - embudo.clicks) }} usuarios vieron pero no hicieron clic.</p>
+                      <p><strong>Pérdida en Conversiones:</strong> {{ "{:,}".format(embudo.clicks - embudo.conversiones) }} usuarios hicieron clic pero no convirtieron.</p>
+                      <p><strong>Eficiencia General:</strong> {{ "{:,}".format(embudo.conversiones) }} de {{ "{:,}".format(embudo.impresiones) }} impresiones resultaron en conversión.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

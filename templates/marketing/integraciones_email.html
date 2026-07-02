@@ -1,0 +1,274 @@
+{% extends "base_site.html" %}
+
+{% block title %}Email Marketing - Integraciones{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-envelope"></i> Email Marketing</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Configuración de Email Marketing</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              {% if configuracion %}
+              <div class="alert alert-success">
+                <i class="fa fa-check-circle"></i> Email Marketing está configurado
+              </div>
+              {% else %}
+              <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i> Email Marketing no está configurado.
+              </div>
+              {% endif %}
+
+              <div class="ln_solid"></div>
+              <h3>Opciones de Integración</h3>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>SMTP Simple</h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <p>Configuración básica usando servidor SMTP.</p>
+                      <ul>
+                        <li>Requerimientos: Servidor SMTP</li>
+                        <li>Ventajas: Simple, directo</li>
+                        <li>Ideal para: Envíos básicos</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>Servicios Profesionales (SendGrid, Mailchimp, etc.)</h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <p>Integración con servicios especializados de email marketing.</p>
+                      <ul>
+                        <li>Requerimientos: Cuenta en el servicio</li>
+                        <li>Ventajas: Alta capacidad, analytics</li>
+                        <li>Ideal para: Campañas masivas</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <form method="POST" action="/marketing/integraciones/email/guardar" class="form-horizontal form-label-left">
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="tipo_servicio">Tipo de Servicio</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <select id="tipo_servicio" name="tipo_servicio" class="form-control">
+                      <option value="smtp" {% if configuracion and configuracion.configuracion and configuracion.configuracion.tipo_servicio == 'smtp' %}selected{% endif %}>SMTP</option>
+                      <option value="sendgrid" {% if configuracion and configuracion.configuracion and configuracion.configuracion.tipo_servicio == 'sendgrid' %}selected{% endif %}>SendGrid</option>
+                      <option value="mailchimp" {% if configuracion and configuracion.configuracion and configuracion.configuracion.tipo_servicio == 'mailchimp' %}selected{% endif %}>Mailchimp</option>
+                      <option value="otro" {% if configuracion and configuracion.configuracion and configuracion.configuracion.tipo_servicio == 'otro' %}selected{% endif %}>Otro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="smtp_host">SMTP Host</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="smtp_host" name="smtp_host" class="form-control" 
+                           placeholder="smtp.gmail.com"
+                           value="{{ configuracion.configuracion.smtp_host if configuracion and configuracion.configuracion else '' }}">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="smtp_port">SMTP Port</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="number" id="smtp_port" name="smtp_port" class="form-control" 
+                           placeholder="587"
+                           value="{{ configuracion.configuracion.smtp_port if configuracion and configuracion.configuracion else '' }}">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="smtp_user">Usuario</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="smtp_user" name="smtp_user" class="form-control"
+                           value="{{ configuracion.configuracion.smtp_user if configuracion and configuracion.configuracion else '' }}">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="smtp_password">Contraseña / API Key</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="password" id="smtp_password" name="smtp_password" class="form-control"
+                           value="{{ configuracion.configuracion.smtp_password if configuracion and configuracion.configuracion else '' }}">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="email_remitente">Email Remitente</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="email" id="email_remitente" name="email_remitente" class="form-control"
+                           value="{{ configuracion.configuracion.email_remitente if configuracion and configuracion.configuracion else '' }}">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="activa">Activar Integración</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="checkbox" id="activa" name="activa" {% if configuracion and configuracion.activa %}checked{% endif %} class="flat">
+                  </div>
+                </div>
+
+                <div class="ln_solid"></div>
+                <div class="form-group">
+                  <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                    <button type="button" class="btn btn-info" onclick="abrirModalEnviarPruebaEmail()" style="margin-right: 10px;">
+                      <i class="fa fa-paper-plane"></i> Enviar Email de Prueba
+                    </button>
+                    <button type="submit" class="btn btn-success"><i class="fa fa-save"></i> Guardar Configuración</button>
+                    <span id="test_result_email" style="margin-left: 10px;"></span>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para enviar email de prueba -->
+  <div class="modal fade" id="modalEnviarPruebaEmail" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Enviar Email de Prueba</h4>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="email_destino_prueba">Email Destino *</label>
+            <input type="email" id="email_destino_prueba" class="form-control" placeholder="destino@example.com" required>
+            <small class="help-block">Ingresa el email donde quieres recibir el mensaje de prueba</small>
+          </div>
+          <div class="form-group">
+            <label for="asunto_prueba">Asunto</label>
+            <input type="text" id="asunto_prueba" class="form-control" value="Prueba de Email Marketing">
+          </div>
+          <div class="form-group">
+            <label for="mensaje_email_prueba">Mensaje</label>
+            <textarea id="mensaje_email_prueba" class="form-control" rows="6">Este es un mensaje de prueba desde el sistema de email marketing.
+
+Si recibes este email, significa que la configuración está funcionando correctamente.</textarea>
+          </div>
+          <div id="resultado_envio_email" style="margin-top: 15px;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-success" onclick="enviarEmailPrueba()">
+            <i class="fa fa-paper-plane"></i> Enviar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+  <script>
+    function abrirModalEnviarPruebaEmail() {
+      $('#modalEnviarPruebaEmail').modal('show');
+      $('#resultado_envio_email').html('');
+    }
+
+    function enviarEmailPrueba() {
+      var emailDestino = document.getElementById('email_destino_prueba').value.trim();
+      var asunto = document.getElementById('asunto_prueba').value.trim() || 'Prueba de Email Marketing';
+      var mensaje = document.getElementById('mensaje_email_prueba').value.trim();
+      var resultadoDiv = document.getElementById('resultado_envio_email');
+      var botonEnviar = event.target || document.querySelector('#modalEnviarPruebaEmail button.btn-success');
+
+      if (!emailDestino) {
+        resultadoDiv.innerHTML = '<div class="alert alert-warning"><i class="fa fa-exclamation-triangle"></i> Ingresa un email destino</div>';
+        return;
+      }
+
+      // Validar formato de email
+      var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailDestino)) {
+        resultadoDiv.innerHTML = '<div class="alert alert-warning"><i class="fa fa-exclamation-triangle"></i> El formato del email no es válido</div>';
+        return;
+      }
+
+      // Deshabilitar botón mientras se envía
+      if (botonEnviar) {
+        botonEnviar.disabled = true;
+        botonEnviar.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Enviando...';
+      }
+
+      resultadoDiv.innerHTML = '<div class="alert alert-info"><i class="fa fa-spinner fa-spin"></i> Enviando email...</div>';
+
+      fetch('/marketing/integraciones/email/enviar-prueba', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email_destino: emailDestino,
+          asunto: asunto,
+          mensaje: mensaje
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {
+            throw new Error(err.message || `Error HTTP ${response.status}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          resultadoDiv.innerHTML = '<div class="alert alert-success"><i class="fa fa-check-circle"></i> <strong>¡Éxito!</strong><br>' + (data.message || 'Email enviado correctamente') + '</div>';
+          document.getElementById('email_destino_prueba').value = '';
+          // Opcional: limpiar después de 5 segundos
+          setTimeout(function() {
+            if (resultadoDiv.innerHTML.includes('alert-success')) {
+              resultadoDiv.innerHTML = '';
+            }
+          }, 5000);
+        } else {
+          resultadoDiv.innerHTML = '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> <strong>Error:</strong><br>' + (data.message || 'Error al enviar email') + '</div>';
+        }
+      })
+      .catch(error => {
+        console.error('Error al enviar email:', error);
+        resultadoDiv.innerHTML = '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> <strong>Error de conexión:</strong><br>' + (error.message || 'No se pudo conectar con el servidor. Verifica tu conexión.') + '</div>';
+      })
+      .finally(function() {
+        // Rehabilitar botón
+        if (botonEnviar) {
+          botonEnviar.disabled = false;
+          botonEnviar.innerHTML = '<i class="fa fa-paper-plane"></i> Enviar';
+        }
+      });
+    }
+  </script>
+{% endblock javascripts %}
+

@@ -1,0 +1,321 @@
+{% extends "base_site.html" %}
+
+{% block title %}Recordatorios{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-bell"></i> Recordatorios</h3>
+        </div>
+        <div class="title_right">
+          <button class="btn btn-success" data-toggle="modal" data-target="#modalNuevoRecordatorio">
+            <i class="fa fa-plus"></i> Nuevo Recordatorio
+          </button>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Recordatorios Programados</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <table class="table table-striped table-bordered">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Destinatario</th>
+                    <th>Canal</th>
+                    <th>Mensaje</th>
+                    <th>Fecha Programada</th>
+                    <th>Estado</th>
+                    <th>Activo</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for recordatorio in recordatorios %}
+                  <tr id="recordatorio-{{ recordatorio.id }}">
+                    <td>{{ recordatorio.nombre or '-' }}</td>
+                    <td><span class="label label-info">{{ recordatorio.tipo }}</span></td>
+                    <td>
+                      {% if recordatorio.destinatario_tipo == 'usuario' %}
+                        Usuario #{{ recordatorio.destinatario_id }}
+                      {% else %}
+                        Cliente #{{ recordatorio.destinatario_id }}
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if recordatorio.canal == 'whatsapp' %}
+                        <span class="label label-success"><i class="fa fa-whatsapp"></i> WhatsApp</span>
+                      {% elif recordatorio.canal == 'email' %}
+                        <span class="label label-primary"><i class="fa fa-envelope"></i> Email</span>
+                      {% else %}
+                        <span class="label label-default">{{ recordatorio.canal }}</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ recordatorio.mensaje[:50] }}...</td>
+                    <td>{{ recordatorio.fecha_programada }}</td>
+                    <td>
+                      {% if recordatorio.enviado %}
+                        <span class="label label-success">Enviado</span>
+                        <small class="text-muted"><br>{{ recordatorio.fecha_envio }}</small>
+                      {% elif recordatorio.estado == 'pendiente' %}
+                        <span class="label label-warning">Pendiente</span>
+                      {% elif recordatorio.estado == 'deshabilitado' %}
+                        <span class="label label-default">Deshabilitado</span>
+                      {% else %}
+                        <span class="label label-default">{{ recordatorio.estado }}</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if recordatorio.activo %}
+                        <span class="label label-success">Activo</span>
+                      {% else %}
+                        <span class="label label-danger">Inactivo</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <button class="btn btn-xs btn-info" onclick="verRecordatorio({{ recordatorio.id }})" title="Ver">
+                        <i class="fa fa-eye"></i>
+                      </button>
+                      {% if recordatorio.activo %}
+                      <button class="btn btn-xs btn-warning" onclick="toggleRecordatorio({{ recordatorio.id }}, false)" title="Deshabilitar">
+                        <i class="fa fa-pause"></i>
+                      </button>
+                      {% else %}
+                      <button class="btn btn-xs btn-success" onclick="toggleRecordatorio({{ recordatorio.id }}, true)" title="Habilitar">
+                        <i class="fa fa-play"></i>
+                      </button>
+                      {% endif %}
+                      {% if not recordatorio.enviado %}
+                      <button class="btn btn-xs btn-danger" onclick="cancelarRecordatorio({{ recordatorio.id }})" title="Cancelar">
+                        <i class="fa fa-times"></i>
+                      </button>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="9" class="text-center text-muted">No hay recordatorios programados</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nuevo Recordatorio -->
+  <div class="modal fade" id="modalNuevoRecordatorio" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Nuevo Recordatorio</h4>
+        </div>
+        <form method="POST" action="/marketing/recordatorios/nuevo" id="formNuevoRecordatorio">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Nombre del Recordatorio</label>
+              <input type="text" name="nombre" class="form-control" placeholder="Ej: Recordatorio de pago mensual">
+              <small class="help-block">Opcional: Nombre descriptivo para identificar este recordatorio</small>
+            </div>
+            <div class="form-group">
+              <label>Tipo *</label>
+              <select name="tipo" class="form-control" required>
+                <option value="">Seleccione...</option>
+                <option value="cita">Recordatorio de Cita</option>
+                <option value="pago">Recordatorio de Pago</option>
+                <option value="seguimiento">Seguimiento</option>
+                <option value="promocion">Promoción</option>
+                <option value="cumpleanos">Cumpleaños</option>
+                <option value="factura">Factura Pendiente</option>
+                <option value="proyecto">Actualización de Proyecto</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Destinatario Tipo *</label>
+              <select name="destinatario_tipo" class="form-control" required id="destinatario_tipo" onchange="actualizarVariablesDisponibles()">
+                <option value="cliente">Cliente</option>
+                <option value="usuario">Usuario de Plataforma</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ID del Destinatario *</label>
+              <input type="number" name="destinatario_id" class="form-control" required>
+              <small class="help-block">ID del cliente o usuario al que se enviará el recordatorio</small>
+            </div>
+            <div class="form-group">
+              <label>Canal *</label>
+              <select name="canal" class="form-control" required>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="email">Email</option>
+                <option value="sms">SMS</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Mensaje * <small>(Usa variables dinámicas)</small></label>
+              <textarea name="mensaje" id="mensaje_recordatorio" class="form-control" rows="6" required placeholder="Hola {nombre_cliente}, ..."></textarea>
+              <small class="help-block">
+                <strong>Variables disponibles:</strong>
+                <div id="variables_disponibles" style="margin-top: 5px;">
+                  <span class="label label-default" onclick="insertarVariable('{nombre_cliente}')" style="cursor: pointer;">{nombre_cliente}</span>
+                  <span class="label label-default" onclick="insertarVariable('{email}')" style="cursor: pointer;">{email}</span>
+                  <span class="label label-default" onclick="insertarVariable('{telefono}')" style="cursor: pointer;">{telefono}</span>
+                  <span class="label label-default" onclick="insertarVariable('{fecha}')" style="cursor: pointer;">{fecha}</span>
+                  <span class="label label-default" onclick="insertarVariable('{fecha_hoy}')" style="cursor: pointer;">{fecha_hoy}</span>
+                  <span class="label label-default" onclick="insertarVariable('{proyecto_nombre}')" style="cursor: pointer;">{proyecto_nombre}</span>
+                  <span class="label label-default" onclick="insertarVariable('{presupuesto_numero}')" style="cursor: pointer;">{presupuesto_numero}</span>
+                  <span class="label label-default" onclick="insertarVariable('{monto}')" style="cursor: pointer;">{monto}</span>
+                  <span class="label label-default" onclick="insertarVariable('{empresa_nombre}')" style="cursor: pointer;">{empresa_nombre}</span>
+                </div>
+                <small>Haz clic en una variable para insertarla en el mensaje</small>
+              </small>
+            </div>
+            <div class="form-group">
+              <label>Fecha y Hora Programada *</label>
+              <input type="datetime-local" name="fecha_programada" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" name="activo" value="1" checked> Activo (se enviará según la fecha programada)
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success">Crear Recordatorio</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+  <script>
+    function insertarVariable(variable) {
+      var textarea = document.getElementById('mensaje_recordatorio');
+      var cursorPos = textarea.selectionStart;
+      var textBefore = textarea.value.substring(0, cursorPos);
+      var textAfter = textarea.value.substring(cursorPos);
+      textarea.value = textBefore + variable + textAfter;
+      textarea.focus();
+      textarea.setSelectionRange(cursorPos + variable.length, cursorPos + variable.length);
+    }
+
+    function actualizarVariablesDisponibles() {
+      var tipo = document.getElementById('destinatario_tipo').value;
+      var div = document.getElementById('variables_disponibles');
+      
+      if (tipo === 'cliente') {
+        div.innerHTML = `
+          <span class="label label-default" onclick="insertarVariable('{nombre_cliente}')" style="cursor: pointer;">{nombre_cliente}</span>
+          <span class="label label-default" onclick="insertarVariable('{apellido_cliente}')" style="cursor: pointer;">{apellido_cliente}</span>
+          <span class="label label-default" onclick="insertarVariable('{nombre_completo}')" style="cursor: pointer;">{nombre_completo}</span>
+          <span class="label label-default" onclick="insertarVariable('{email}')" style="cursor: pointer;">{email}</span>
+          <span class="label label-default" onclick="insertarVariable('{telefono}')" style="cursor: pointer;">{telefono}</span>
+          <span class="label label-default" onclick="insertarVariable('{empresa_nombre}')" style="cursor: pointer;">{empresa_nombre}</span>
+          <span class="label label-default" onclick="insertarVariable('{rut}')" style="cursor: pointer;">{rut}</span>
+          <span class="label label-default" onclick="insertarVariable('{fecha}')" style="cursor: pointer;">{fecha}</span>
+          <span class="label label-default" onclick="insertarVariable('{fecha_hoy}')" style="cursor: pointer;">{fecha_hoy}</span>
+          <span class="label label-default" onclick="insertarVariable('{proyecto_nombre}')" style="cursor: pointer;">{proyecto_nombre}</span>
+          <span class="label label-default" onclick="insertarVariable('{presupuesto_numero}')" style="cursor: pointer;">{presupuesto_numero}</span>
+          <span class="label label-default" onclick="insertarVariable('{monto}')" style="cursor: pointer;">{monto}</span>
+          <span class="label label-default" onclick="insertarVariable('{proyecto_estado}')" style="cursor: pointer;">{proyecto_estado}</span>
+        `;
+      } else {
+        div.innerHTML = `
+          <span class="label label-default" onclick="insertarVariable('{nombre_usuario}')" style="cursor: pointer;">{nombre_usuario}</span>
+          <span class="label label-default" onclick="insertarVariable('{apellido_usuario}')" style="cursor: pointer;">{apellido_usuario}</span>
+          <span class="label label-default" onclick="insertarVariable('{email}')" style="cursor: pointer;">{email}</span>
+          <span class="label label-default" onclick="insertarVariable('{username}')" style="cursor: pointer;">{username}</span>
+          <span class="label label-default" onclick="insertarVariable('{fecha}')" style="cursor: pointer;">{fecha}</span>
+          <span class="label label-default" onclick="insertarVariable('{fecha_hoy}')" style="cursor: pointer;">{fecha_hoy}</span>
+        `;
+      }
+    }
+
+    function toggleRecordatorio(id, activar) {
+      fetch('/marketing/recordatorios/' + id + '/toggle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          activo: activar
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('Error: ' + (data.message || 'Error desconocido'));
+        }
+      })
+      .catch(error => {
+        alert('Error de conexión');
+      });
+    }
+
+    function verRecordatorio(id) {
+      fetch('/marketing/recordatorios/' + id)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            var rec = data.recordatorio;
+            var mensaje = 'ID: ' + rec.id + '\n' +
+                         'Nombre: ' + (rec.nombre || '-') + '\n' +
+                         'Tipo: ' + rec.tipo + '\n' +
+                         'Destinatario: ' + rec.destinatario_tipo + ' #' + rec.destinatario_id + '\n' +
+                         'Canal: ' + rec.canal + '\n' +
+                         'Mensaje:\n' + rec.mensaje + '\n' +
+                         'Fecha Programada: ' + rec.fecha_programada + '\n' +
+                         'Estado: ' + rec.estado + '\n' +
+                         'Activo: ' + (rec.activo ? 'Sí' : 'No');
+            alert(mensaje);
+          }
+        });
+    }
+
+    function cancelarRecordatorio(id) {
+      if (confirm('¿Estás seguro de cancelar este recordatorio?')) {
+        fetch('/marketing/recordatorios/' + id + '/cancelar', {
+          method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert('Error: ' + (data.message || 'Error desconocido'));
+          }
+        });
+      }
+    }
+
+    // Inicializar variables al cargar
+    document.addEventListener('DOMContentLoaded', function() {
+      actualizarVariablesDisponibles();
+    });
+  </script>
+{% endblock javascripts %}
+

@@ -1,0 +1,138 @@
+{% extends "base_site.html" %}
+
+{% block title %}Agenda Personal{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-calendar"></i> Agenda Personal</h3>
+        </div>
+        <div class="title_right">
+          <button class="btn btn-success" data-toggle="modal" data-target="#modalNuevoEvento">
+            <i class="fa fa-plus"></i> Nuevo Evento
+          </button>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Mis Eventos</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <table class="table table-striped table-bordered">
+                <thead>
+                  <tr>
+                    <th>Fecha y Hora</th>
+                    <th>Título</th>
+                    <th>Tipo</th>
+                    <th>Cliente/Negocio</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for agenda in agendas %}
+                  <tr>
+                    <td>{{ agenda.fecha }}</td>
+                    <td>{{ agenda.titulo }}</td>
+                    <td><span class="label label-info">{{ agenda.tipo_evento }}</span></td>
+                    <td>
+                      {% if agenda.cliente_id %}
+                        Cliente #{{ agenda.cliente_id }}
+                      {% elif agenda.negocio_sucursal %}
+                        {{ agenda.negocio_sucursal }}
+                      {% else %}
+                        -
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if agenda.estado == 'completado' %}
+                        <span class="label label-success">Completado</span>
+                      {% elif agenda.estado == 'cancelado' %}
+                        <span class="label label-danger">Cancelado</span>
+                      {% else %}
+                        <span class="label label-warning">Programado</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <button class="btn btn-xs btn-primary" onclick="verEvento({{ agenda.id }})">
+                        <i class="fa fa-eye"></i>
+                      </button>
+                      <button class="btn btn-xs btn-warning" onclick="editarEvento({{ agenda.id }})">
+                        <i class="fa fa-edit"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">No hay eventos programados</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nuevo Evento -->
+  <div class="modal fade" id="modalNuevoEvento" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Nuevo Evento</h4>
+        </div>
+        <form method="POST" action="/marketing/agendas/nueva">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Título *</label>
+              <input type="text" name="titulo" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Tipo de Evento *</label>
+              <select name="tipo_evento" class="form-control" required>
+                <option value="">Seleccione...</option>
+                <option value="llamada">Llamada</option>
+                <option value="reunion">Reunión</option>
+                <option value="visita">Visita</option>
+                <option value="seguimiento">Seguimiento</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Fecha y Hora *</label>
+              <input type="datetime-local" name="fecha" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Descripción</label>
+              <textarea name="descripcion" class="form-control" rows="3"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

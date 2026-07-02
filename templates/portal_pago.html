@@ -1,0 +1,73 @@
+{% extends "base_site.html" %}
+
+{% block title %} Portal de Pago {% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3>Portal de Pago <small>Proyecto: {{ proyecto.nombre }}</small></h3>
+        </div>
+      </div>
+      <div class="clearfix"></div>
+      <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2><i class="fa fa-credit-card"></i> Realizar Pago</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content" style="padding: 30px;">
+              <div class="alert alert-info">
+                <h4><i class="fa fa-info-circle"></i> Información del Proyecto</h4>
+                <p><strong>Proyecto:</strong> {{ proyecto.nombre }}</p>
+                {% if presupuesto %}
+                <p><strong>Número de Presupuesto:</strong> {{ presupuesto.numero_presupuesto }}</p>
+                {% endif %}
+                <p><strong>Monto a Pagar:</strong> <span style="font-size: 24px; color: #5cb85c; font-weight: bold;">${{ "{:,.0f}".format(monto_total) }}</span></p>
+              </div>
+              
+              <div class="text-center" style="margin: 40px 0;">
+                <h4>Selecciona tu método de pago</h4>
+                <div style="margin-top: 30px;">
+                  <button type="button" class="btn btn-success btn-lg" id="btnPagarAhora" style="margin: 10px; padding: 15px 40px;">
+                    <i class="fa fa-credit-card"></i> Pagar con Tarjeta
+                  </button>
+                  <br>
+                  <a href="/projects" class="btn btn-default" style="margin-top: 20px;">
+                    <i class="fa fa-arrow-left"></i> Volver a Proyectos
+                  </a>
+                </div>
+              </div>
+              
+              <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle"></i> <strong>Nota:</strong> Esta es una página de ejemplo. En producción, aquí se integraría con un gateway de pago real (Flow, Webpay, Stripe, etc.)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+  <script>
+    $(function () {
+      $('#btnPagarAhora').on('click', function() {
+        // Aquí se integraría con el gateway de pago real
+        // Por ejemplo, redirigir a Flow, Webpay, etc.
+        alert('En producción, aquí se redirigiría al gateway de pago real (Flow, Webpay, Stripe, etc.)');
+        // Ejemplo de redirección:
+        // window.location.href = 'https://flow.cl/pagar?monto=' + {{ monto_total }} + '&proyecto_id=' + {{ proyecto.id }};
+      });
+    });
+  </script>
+{% endblock javascripts %}
+

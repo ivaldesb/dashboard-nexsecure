@@ -1,0 +1,91 @@
+{% extends "base_site.html" %}
+
+{% block title %}Campañas de Marketing{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-bullseye"></i> Campañas de Marketing</h3>
+        </div>
+        <div class="title_right">
+          <a href="/marketing/campanas/nueva" class="btn btn-success"><i class="fa fa-plus"></i> Nueva Campaña</a>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Lista de Campañas</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <table class="table table-striped table-bordered" id="campanas-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Plataforma</th>
+                    <th>Estado</th>
+                    <th>Presupuesto</th>
+                    <th>Gastado</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Fin</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for campana in campanas %}
+                  <tr>
+                    <td>{{ campana.nombre }}</td>
+                    <td>{{ campana.tipo }}</td>
+                    <td><span class="label label-info">{{ campana.plataforma }}</span></td>
+                    <td>
+                      {% if campana.estado == 'activa' %}
+                        <span class="label label-success">Activa</span>
+                      {% elif campana.estado == 'pausada' %}
+                        <span class="label label-warning">Pausada</span>
+                      {% elif campana.estado == 'finalizada' %}
+                        <span class="label label-default">Finalizada</span>
+                      {% else %}
+                        <span class="label label-default">Borrador</span>
+                      {% endif %}
+                    </td>
+                    <td>${{ "{:,.0f}".format(campana.presupuesto) }}</td>
+                    <td>${{ "{:,.0f}".format(campana.presupuesto_gastado) }}</td>
+                    <td>{{ campana.fecha_inicio or '-' }}</td>
+                    <td>{{ campana.fecha_fin or '-' }}</td>
+                    <td>
+                      <a href="/marketing/campanas/{{ campana.id }}" class="btn btn-xs btn-primary"><i class="fa fa-eye"></i></a>
+                      <a href="/marketing/campanas/{{ campana.id }}/editar" class="btn btn-xs btn-warning"><i class="fa fa-edit"></i></a>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="9" class="text-center text-muted">
+                      No hay campañas registradas. <a href="/marketing/campanas/nueva">Crear primera campaña</a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

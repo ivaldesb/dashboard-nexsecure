@@ -1,0 +1,84 @@
+{% extends "base_site.html" %}
+
+{% block title %} Presupuestos {% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3>Gestión de Presupuestos <small>Administración de presupuestos por proyecto</small></h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Proyectos con Presupuesto</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <table class="table table-striped table-bordered">
+                <thead>
+                  <tr>
+                    <th>Proyecto</th>
+                    <th>N° Presupuesto</th>
+                    <th>Tipo</th>
+                    <th>Cliente</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if proyectos %}
+                    {% for proyecto in proyectos %}
+                    <tr>
+                      <td>{{ proyecto.nombre }}</td>
+                      <td>{{ proyecto.numero_presupuesto or '---' }}</td>
+                      <td>
+                        <span class="label label-{% if proyecto.tipo_presupuesto == 'principal' %}primary{% else %}info{% endif %}">
+                          {{ proyecto.tipo_presupuesto|title if proyecto.tipo_presupuesto else 'Principal' }}
+                        </span>
+                      </td>
+                      <td>{{ proyecto.cliente_presupuesto or '---' }}</td>
+                      <td>
+                        <span class="label label-{% if proyecto.estado == 'en_desarrollo' %}info{% elif proyecto.estado == 'espera_aprobacion' %}warning{% elif proyecto.estado == 'completado' %}success{% else %}default{% endif %}">
+                          {{ proyecto.estado|replace('_', ' ')|title }}
+                        </span>
+                      </td>
+                      <td>
+                        <a href="/presupuesto/{{ proyecto.presupuesto_id }}/gestion" class="btn btn-primary btn-xs">
+                          <i class="fa fa-cog"></i> Gestionar
+                        </a>
+                        <a href="/project_detail?id={{ proyecto.id }}" class="btn btn-info btn-xs">
+                          <i class="fa fa-eye"></i> Ver Proyecto
+                        </a>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td colspan="6" class="text-center">No hay proyectos con presupuesto</td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

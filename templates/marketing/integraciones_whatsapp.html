@@ -1,0 +1,398 @@
+{% extends "base_site.html" %}
+
+{% block title %}WhatsApp Business - Integraciones{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-whatsapp"></i> WhatsApp Business</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Configuración de WhatsApp Business</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              {% if configuracion %}
+              <div class="alert alert-success">
+                <i class="fa fa-check-circle"></i> WhatsApp Business está configurado
+              </div>
+              <div class="form-horizontal form-label-left">
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12">Estado</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    {% if configuracion.activa %}
+                      <span class="label label-success">Activa</span>
+                    {% else %}
+                      <span class="label label-danger">Inactiva</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12">Número de Teléfono</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <p class="form-control-static">{{ configuracion.configuracion.phone_number if configuracion.configuracion else 'No configurado' }}</p>
+                  </div>
+                </div>
+              </div>
+              {% else %}
+              <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i> WhatsApp Business no está configurado. Por favor, configura la integración.
+              </div>
+              {% endif %}
+
+              <div class="ln_solid"></div>
+              <h3>Opciones de Integración</h3>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>Evolution API <span class="label label-success">Recomendado</span></h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <p>API open-source para WhatsApp Business con múltiples instancias y alta capacidad.</p>
+                      <ul>
+                        <li>Requerimientos: Servidor con Evolution API instalado</li>
+                        <li>Ventajas: Gratuita, open-source, muy flexible</li>
+                        <li>Ideal para: Envío masivo, campañas, automatización</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>API Oficial de WhatsApp Business</h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <p>Integración directa con la API oficial de WhatsApp Business (requiere cuenta verificada).</p>
+                      <ul>
+                        <li>Requerimientos: Cuenta de WhatsApp Business verificada</li>
+                        <li>Ventajas: Totalmente oficial, alta capacidad</li>
+                        <li>Costo: Puede requerir suscripción</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>Servicio de Terceros (Twilio, etc.)</h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <p>Integración a través de servicios que facilitan el envío de mensajes.</p>
+                      <ul>
+                        <li>Requerimientos: Cuenta en el servicio</li>
+                        <li>Ventajas: Fácil de configurar, más flexible</li>
+                        <li>Costo: Varía según el servicio</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <form method="POST" action="/marketing/integraciones/whatsapp/guardar" class="form-horizontal form-label-left" id="formWhatsApp">
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="tipo_integracion">Tipo de Integración <span class="required">*</span>
+                  </label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <select id="tipo_integracion" name="tipo_integracion" class="form-control" required onchange="toggleCamposIntegracion()">
+                      <option value="">Seleccione...</option>
+                      <option value="evolution_api" {% if configuracion and configuracion.configuracion and configuracion.configuracion.tipo_integracion == 'evolution_api' %}selected{% endif %}>Evolution API</option>
+                      <option value="oficial" {% if configuracion and configuracion.configuracion and configuracion.configuracion.tipo_integracion == 'oficial' %}selected{% endif %}>API Oficial WhatsApp Business</option>
+                      <option value="twilio" {% if configuracion and configuracion.configuracion and configuracion.configuracion.tipo_integracion == 'twilio' %}selected{% endif %}>Twilio</option>
+                      <option value="otro" {% if configuracion and configuracion.configuracion and configuracion.configuracion.tipo_integracion == 'otro' %}selected{% endif %}>Otro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Campos para Evolution API -->
+                <div id="campos_evolution_api" style="display: none;">
+                  <div class="form-group">
+                    <label class="control-label col-md-3 col-sm-3 col-xs-12" for="evolution_api_url">URL Base de Evolution API <span class="required">*</span>
+                    </label>
+                    <div class="col-md-6 col-sm-6 col-xs-12">
+                      <input type="text" id="evolution_api_url" name="evolution_api_url" class="form-control col-md-7 col-xs-12" 
+                             placeholder="http://localhost:8080" 
+                             value="{{ configuracion.configuracion.evolution_api_url if configuracion and configuracion.configuracion else '' }}">
+                      <small class="help-block">Ejemplo: http://localhost:8080 o https://api.evolutionapi.com</small>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="control-label col-md-3 col-sm-3 col-xs-12" for="evolution_api_key">API Key <span class="required">*</span>
+                    </label>
+                    <div class="col-md-6 col-sm-6 col-xs-12">
+                      <input type="text" id="evolution_api_key" name="evolution_api_key" class="form-control col-md-7 col-xs-12"
+                             placeholder="Tu API Key de Evolution API"
+                             value="{{ configuracion.configuracion.evolution_api_key if configuracion and configuracion.configuracion else '' }}">
+                      <small class="help-block">La API Key de tu instancia de Evolution API</small>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="control-label col-md-3 col-sm-3 col-xs-12" for="evolution_instance_id">Instance ID <span class="required">*</span>
+                    </label>
+                    <div class="col-md-6 col-sm-6 col-xs-12">
+                      <input type="text" id="evolution_instance_id" name="evolution_instance_id" class="form-control col-md-7 col-xs-12"
+                             placeholder="9b89d866-2516-4742-aed6-3860e054d7a0"
+                             value="{{ configuracion.configuracion.evolution_instance_id if configuracion and configuracion.configuracion else '' }}">
+                      <small class="help-block">UUID de la instancia (puedes copiarlo de la URL del dashboard: /manager/instance/<strong>UUID</strong>/dashboard) o el nombre de la instancia</small>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="control-label col-md-3 col-sm-3 col-xs-12" for="evolution_number">Número de WhatsApp</label>
+                    <div class="col-md-6 col-sm-6 col-xs-12">
+                      <input type="text" id="evolution_number" name="evolution_number" class="form-control col-md-7 col-xs-12" 
+                             placeholder="56912345678" 
+                             value="{{ configuracion.configuracion.evolution_number if configuracion and configuracion.configuracion else '' }}">
+                      <small class="help-block">Número asociado a la instancia (opcional, se detecta automáticamente)</small>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                      <button type="button" class="btn btn-info" onclick="probarEvolutionAPI()">
+                        <i class="fa fa-flask"></i> Probar Conexión
+                      </button>
+                      <button type="button" class="btn btn-success" onclick="abrirModalEnviarPrueba()" style="margin-left: 10px;">
+                        <i class="fa fa-paper-plane"></i> Enviar Mensaje de Prueba
+                      </button>
+                      <span id="test_result" style="margin-left: 10px;"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Campos para otras integraciones -->
+                <div id="campos_otras" style="display: none;">
+                  <div class="form-group">
+                    <label class="control-label col-md-3 col-sm-3 col-xs-12" for="phone_number">Número de Teléfono <span class="required">*</span>
+                    </label>
+                    <div class="col-md-6 col-sm-6 col-xs-12">
+                      <input type="text" id="phone_number" name="phone_number" class="form-control col-md-7 col-xs-12" 
+                             placeholder="+56912345678" 
+                             value="{{ configuracion.configuracion.phone_number if configuracion and configuracion.configuracion else '' }}">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="control-label col-md-3 col-sm-3 col-xs-12" for="api_key">API Key / Token</label>
+                    <div class="col-md-6 col-sm-6 col-xs-12">
+                      <input type="text" id="api_key" name="api_key" class="form-control col-md-7 col-xs-12"
+                             value="{{ configuracion.configuracion.api_key if configuracion and configuracion.configuracion else '' }}">
+                      <small class="help-block">Si usas servicio de terceros, ingresa tu API Key</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="activa">Activar Integración</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="checkbox" id="activa" name="activa" {% if configuracion and configuracion.activa %}checked{% endif %} class="flat">
+                  </div>
+                </div>
+
+                <div class="ln_solid"></div>
+                <div class="form-group">
+                  <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                    <button type="submit" class="btn btn-success"><i class="fa fa-save"></i> Guardar Configuración</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para enviar mensaje de prueba -->
+  <div class="modal fade" id="modalEnviarPrueba" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Enviar Mensaje de Prueba</h4>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="numero_prueba">Número de Destino *</label>
+            <input type="text" id="numero_prueba" class="form-control" placeholder="56912345678" required>
+            <small class="help-block">Ingresa el número sin el signo + (ejemplo: 56912345678)</small>
+          </div>
+          <div class="form-group">
+            <label for="mensaje_prueba">Mensaje</label>
+            <textarea id="mensaje_prueba" class="form-control" rows="4">Este es un mensaje de prueba desde el sistema de marketing.</textarea>
+          </div>
+          <div id="resultado_envio" style="margin-top: 15px;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-success" onclick="enviarMensajePrueba()">
+            <i class="fa fa-paper-plane"></i> Enviar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+  <script>
+    function toggleCamposIntegracion() {
+      var tipo = document.getElementById('tipo_integracion').value;
+      var camposEvolution = document.getElementById('campos_evolution_api');
+      var camposOtras = document.getElementById('campos_otras');
+      
+      if (tipo === 'evolution_api') {
+        camposEvolution.style.display = 'block';
+        camposOtras.style.display = 'none';
+        // Hacer campos requeridos
+        document.getElementById('evolution_api_url').required = true;
+        document.getElementById('evolution_api_key').required = true;
+        document.getElementById('evolution_instance_id').required = true;
+        document.getElementById('phone_number').required = false;
+      } else if (tipo) {
+        camposEvolution.style.display = 'none';
+        camposOtras.style.display = 'block';
+        // Hacer campos requeridos según el caso
+        document.getElementById('phone_number').required = true;
+        document.getElementById('evolution_api_url').required = false;
+        document.getElementById('evolution_api_key').required = false;
+        document.getElementById('evolution_instance_id').required = false;
+      } else {
+        camposEvolution.style.display = 'none';
+        camposOtras.style.display = 'none';
+      }
+    }
+
+    function probarEvolutionAPI() {
+      var url = document.getElementById('evolution_api_url').value;
+      var apiKey = document.getElementById('evolution_api_key').value;
+      var instanceId = document.getElementById('evolution_instance_id').value;
+      var resultSpan = document.getElementById('test_result');
+
+      if (!url || !apiKey || !instanceId) {
+        resultSpan.innerHTML = '<span class="label label-warning">Completa todos los campos primero</span>';
+        return;
+      }
+
+      resultSpan.innerHTML = '<span class="label label-info">Probando...</span>';
+
+      fetch('/marketing/integraciones/whatsapp/probar-evolution', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          evolution_api_url: url,
+          evolution_api_key: apiKey,
+          evolution_instance_id: instanceId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          resultSpan.innerHTML = '<span class="label label-success">✓ Conexión exitosa</span>';
+        } else {
+          resultSpan.innerHTML = '<span class="label label-danger">✗ Error: ' + (data.message || 'Error desconocido') + '</span>';
+        }
+      })
+      .catch(error => {
+        resultSpan.innerHTML = '<span class="label label-danger">✗ Error de conexión</span>';
+      });
+    }
+
+    function abrirModalEnviarPrueba() {
+      $('#modalEnviarPrueba').modal('show');
+      $('#resultado_envio').html('');
+    }
+
+    function enviarMensajePrueba() {
+      var numero = document.getElementById('numero_prueba').value.trim();
+      var mensaje = document.getElementById('mensaje_prueba').value.trim() || 'Este es un mensaje de prueba desde el sistema de marketing.';
+      var resultadoDiv = document.getElementById('resultado_envio');
+      var botonEnviar = event.target || document.querySelector('#modalEnviarPrueba button.btn-success');
+
+      if (!numero) {
+        resultadoDiv.innerHTML = '<div class="alert alert-warning"><i class="fa fa-exclamation-triangle"></i> Ingresa un número de destino</div>';
+        return;
+      }
+
+      // Deshabilitar botón mientras se envía
+      if (botonEnviar) {
+        botonEnviar.disabled = true;
+        botonEnviar.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Enviando...';
+      }
+
+      resultadoDiv.innerHTML = '<div class="alert alert-info"><i class="fa fa-spinner fa-spin"></i> Enviando mensaje...</div>';
+
+      fetch('/marketing/integraciones/whatsapp/enviar-prueba', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          numero: numero,
+          mensaje: mensaje
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {
+            throw new Error(err.message || `Error HTTP ${response.status}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          resultadoDiv.innerHTML = '<div class="alert alert-success"><i class="fa fa-check-circle"></i> <strong>¡Éxito!</strong><br>' + (data.message || 'Mensaje enviado correctamente') + '</div>';
+          document.getElementById('numero_prueba').value = '';
+          // Opcional: limpiar después de 5 segundos
+          setTimeout(function() {
+            if (resultadoDiv.innerHTML.includes('alert-success')) {
+              resultadoDiv.innerHTML = '';
+            }
+          }, 5000);
+        } else {
+          resultadoDiv.innerHTML = '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> <strong>Error:</strong><br>' + (data.message || 'Error al enviar mensaje') + '</div>';
+        }
+      })
+      .catch(error => {
+        console.error('Error al enviar mensaje:', error);
+        resultadoDiv.innerHTML = '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> <strong>Error de conexión:</strong><br>' + (error.message || 'No se pudo conectar con el servidor. Verifica tu conexión.') + '</div>';
+      })
+      .finally(function() {
+        // Rehabilitar botón
+        if (botonEnviar) {
+          botonEnviar.disabled = false;
+          botonEnviar.innerHTML = '<i class="fa fa-paper-plane"></i> Enviar';
+        }
+      });
+    }
+
+    // Inicializar al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      toggleCamposIntegracion();
+    });
+  </script>
+{% endblock javascripts %}
+

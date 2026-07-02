@@ -1,0 +1,120 @@
+{% extends "base_site.html" %}
+
+{% block title %}Presupuesto y Gastos{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-money"></i> Presupuesto y Gastos</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <!-- Resumen General -->
+      <div class="row">
+        <div class="col-md-4">
+          <div class="x_panel tile overflow_hidden">
+            <div class="x_title">
+              <h2>Presupuesto Total</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <h2>${{ "{:,.0f}".format(total_presupuesto) }}</h2>
+              <small>Presupuesto asignado</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="x_panel tile overflow_hidden">
+            <div class="x_title">
+              <h2>Gastado</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <h2>${{ "{:,.0f}".format(total_gastado) }}</h2>
+              <small>Total invertido</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="x_panel tile overflow_hidden">
+            <div class="x_title">
+              <h2>Disponible</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <h2>${{ "{:,.0f}".format(disponible) }}</h2>
+              <small>Presupuesto restante</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Presupuesto por Campaña</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <table class="table table-striped table-bordered">
+                <thead>
+                  <tr>
+                    <th>Campaña</th>
+                    <th>Presupuesto</th>
+                    <th>Gastado</th>
+                    <th>Disponible</th>
+                    <th>% Gastado</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for campana in campanas %}
+                  <tr>
+                    <td>{{ campana.nombre }}</td>
+                    <td>${{ "{:,.0f}".format(campana.presupuesto) }}</td>
+                    <td>${{ "{:,.0f}".format(campana.presupuesto_gastado) }}</td>
+                    <td>${{ "{:,.0f}".format(campana.presupuesto - campana.presupuesto_gastado) }}</td>
+                    <td>
+                      <div class="progress">
+                        <div class="progress-bar {% if campana.porcentaje_gastado > 80 %}progress-bar-danger{% elif campana.porcentaje_gastado > 60 %}progress-bar-warning{% else %}progress-bar-success{% endif %}" 
+                             role="progressbar" style="width: {{ campana.porcentaje_gastado }}%">
+                          {{ "%.1f"|format(campana.porcentaje_gastado) }}%
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      {% if campana.estado == 'activa' %}
+                        <span class="label label-success">Activa</span>
+                      {% else %}
+                        <span class="label label-default">{{ campana.estado }}</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">No hay campañas con presupuesto asignado</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

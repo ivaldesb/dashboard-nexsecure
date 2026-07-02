@@ -1,0 +1,117 @@
+{% extends "base_site.html" %}
+
+{% block title %}Exportar Clientes{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-download"></i> Exportar para Meta/Google</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Exportar Base de Datos de Clientes</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i> Exporta tu base de datos de clientes para crear audiencias personalizadas en Meta (Facebook/Instagram) y Google Ads.
+              </div>
+
+              <div class="row" style="margin-bottom: 20px;">
+                <div class="col-md-6">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>Formato para Meta (Facebook/Instagram)</h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <p>Formato CSV compatible con Facebook Ads Manager.</p>
+                      <p><strong>Total de clientes:</strong> {{ total_clientes }}</p>
+                      <button class="btn btn-primary" onclick="exportarMeta()">
+                        <i class="fa fa-download"></i> Exportar CSV para Meta
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="x_panel">
+                    <div class="x_title">
+                      <h4>Formato para Google Ads</h4>
+                      <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                      <p>Formato CSV compatible con Google Ads.</p>
+                      <p><strong>Total de clientes:</strong> {{ total_clientes }}</p>
+                      <button class="btn btn-success" onclick="exportarGoogle()">
+                        <i class="fa fa-download"></i> Exportar CSV para Google
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="x_panel">
+                <div class="x_title">
+                  <h4>Vista Previa de Datos</h4>
+                  <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                  <table class="table table-striped table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Segmento</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for cliente in clientes[:10] %}
+                      <tr>
+                        <td>{{ cliente.email }}</td>
+                        <td>{{ cliente.telefono }}</td>
+                        <td>{{ cliente.nombre }}</td>
+                        <td>{{ cliente.apellido }}</td>
+                        <td>{{ cliente.segmento }}</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                  {% if clientes|length > 10 %}
+                  <p class="text-muted">Mostrando 10 de {{ total_clientes }} clientes</p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+  <script>
+    function exportarMeta() {
+      window.location.href = '/marketing/clientes/exportar/csv?formato=meta';
+    }
+    function exportarGoogle() {
+      window.location.href = '/marketing/clientes/exportar/csv?formato=google';
+    }
+  </script>
+{% endblock javascripts %}
+

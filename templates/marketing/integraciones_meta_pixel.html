@@ -1,0 +1,116 @@
+{% extends "base_site.html" %}
+
+{% block title %}Meta Pixel - Integraciones{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-facebook"></i> Meta Pixel (Facebook Ads)</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Configuración de Meta Pixel</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              {% if configuracion %}
+              <div class="alert alert-success">
+                <i class="fa fa-check-circle"></i> Meta Pixel está configurado
+              </div>
+              <div class="form-horizontal form-label-left">
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12">Estado</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    {% if configuracion.activa %}
+                      <span class="label label-success">Activa</span>
+                    {% else %}
+                      <span class="label label-danger">Inactiva</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12">ID del Pixel</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <p class="form-control-static">{{ configuracion.configuracion.pixel_id if configuracion.configuracion else 'No configurado' }}</p>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12">Token de Acceso</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <p class="form-control-static">{{ configuracion.configuracion.access_token[:10] + '...' if configuracion.configuracion and configuracion.configuracion.access_token else 'No configurado' }}</p>
+                  </div>
+                </div>
+              </div>
+              {% else %}
+              <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i> Meta Pixel no está configurado. Por favor, configura la integración.
+              </div>
+              {% endif %}
+
+              <div class="ln_solid"></div>
+              <h3>Instrucciones de Integración</h3>
+              <ol>
+                <li>Ve a tu <a href="https://business.facebook.com/events_manager" target="_blank">Facebook Events Manager</a></li>
+                <li>Crea un nuevo Pixel o selecciona uno existente</li>
+                <li>Copia el ID del Pixel</li>
+                <li>Genera un Token de Acceso en la sección de Configuración</li>
+                <li>Ingresa los datos en el formulario a continuación</li>
+              </ol>
+
+              <form method="POST" action="/marketing/integraciones/meta-pixel/guardar" class="form-horizontal form-label-left">
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="pixel_id">Pixel ID <span class="required">*</span>
+                  </label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="pixel_id" name="pixel_id" required="required" class="form-control col-md-7 col-xs-12" 
+                           value="{{ configuracion.configuracion.pixel_id if configuracion and configuracion.configuracion else '' }}">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="access_token">Token de Acceso <span class="required">*</span>
+                  </label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="access_token" name="access_token" required="required" class="form-control col-md-7 col-xs-12"
+                           value="{{ configuracion.configuracion.access_token if configuracion and configuracion.configuracion else '' }}">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="activa">Activar Integración</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="checkbox" id="activa" name="activa" {% if configuracion and configuracion.activa %}checked{% endif %} class="flat">
+                  </div>
+                </div>
+
+                <div class="ln_solid"></div>
+                <div class="form-group">
+                  <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                    <button type="submit" class="btn btn-success"><i class="fa fa-save"></i> Guardar Configuración</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

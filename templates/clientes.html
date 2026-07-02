@@ -1,0 +1,499 @@
+{% extends "base_site.html" %}
+
+{% block title %} Clientes {% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3>Clientes <small>Gestión de clientes</small></h3>
+        </div>
+        <div class="title_right">
+          <div class="col-md-5 col-sm-5 col-xs-12 form-group pull-right top_search">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Correo/Nombre/Apellido/RUT/Tipo Cliente" id="clienteSearchInput">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button">Buscar</button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="clearfix"></div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Clientes</h2>
+              <ul class="nav navbar-right panel_toolbox">
+                <li class="dropdown">
+                  <a href="#" class="btn btn-success btn-xs" title="Añadir cliente" style="color:white; margin-left:8px;" data-toggle="modal" data-target="#modalAddCliente">
+                    <i class="fa fa-plus"></i>
+                  </a>
+                </li>
+              </ul>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <table class="table table-striped projects">
+                <thead>
+                  <tr>
+                    <th style="width: 1%">#</th>
+                    <th>Nombre y Apellidos / Empresa</th>
+                    <th>Correo</th>
+                    <th>Tipo Cliente</th>
+                    <th>RUT</th>
+                    <th>Usuario Referidor</th>
+                    <th>Última conexión</th>
+                    <th>Estado</th>
+                    <th style="width: 20%">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for cliente in clientes %}
+                  <tr data-cliente='{{ cliente | tojson | safe }}'>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                      {% if cliente.tipo_cliente == 'empresa' %}
+                        {{ cliente.nombre_empresa }}<br>
+                        <small>{{ cliente.nombre }} {{ cliente.apellido }}</small>
+                      {% else %}
+                        {{ cliente.nombre }} {{ cliente.apellido }}
+                      {% endif %}
+                    </td>
+                    <td>{{ cliente.correo }}</td>
+                    <td>{{ cliente.tipo_cliente }}</td>
+                    <td>{{ cliente.rut }}</td>
+                    <td>
+                      {% if cliente.usuario_referidor_nombre %}
+                        {{ cliente.usuario_referidor_nombre }}
+                      {% else %}
+                        <span class="text-muted">Sin referidor</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ cliente.last_login if cliente.last_login else 'Nunca' }}</td>
+                    <td>
+                      <a href="#" class="toggle-estado-cliente" data-cliente-id="{{ cliente.id }}">
+                        {% if cliente.estado == 'habilitado' %}
+                          <span class="badge badge-success" style="background-color: green;">Habilitado</span>
+                        {% else %}
+                          <span class="badge badge-danger" style="background-color: red;">Deshabilitado</span>
+                        {% endif %}
+                      </a>
+                    </td>
+                    <td>
+                      <a href="#" class="btn btn-primary btn-xs btn-ver-cliente" data-toggle="modal" data-target="#modalPerfilCliente" data-cliente='{{ cliente | tojson | safe }}'><i class="fa fa-folder"></i> Ver </a>
+                      <a href="#" class="btn btn-info btn-xs btn-edit-cliente" data-cliente-id="{{ cliente.id }}"><i class="fa fa-pencil"></i> Editar </a>
+                      <a href="#" class="btn btn-danger btn-xs btn-delete-cliente" data-cliente-id="{{ cliente.id }}"><i class="fa fa-trash-o"></i> Eliminar </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para registrar/editar cliente -->
+  <div class="modal fade" id="modalAddCliente" tabindex="-1" role="dialog" aria-labelledby="modalAddClienteLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <form id="addClienteForm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalAddClienteLabel">Registrar nuevo cliente</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="edit_cliente_id" id="edit_cliente_id">
+            <input type="hidden" name="estado" id="estado_cliente" value="habilitado">
+            <div class="form-group">
+              <label for="tipo_cliente">Tipo de Cliente</label>
+              <select class="form-control" name="tipo_cliente" id="tipo_cliente" required>
+                <option value="">Seleccione</option>
+                <option value="persona">Persona Natural</option>
+                <option value="empresa">Empresa</option>
+              </select>
+            </div>
+            <div id="camposContacto">
+              <div class="form-group">
+                <label for="nombre">Nombre</label>
+                <input type="text" class="form-control" name="nombre" id="nombre" required>
+              </div>
+              <div class="form-group">
+                <label for="apellido">Apellidos</label>
+                <input type="text" class="form-control" name="apellido" id="apellido" required>
+              </div>
+              <div class="form-group" id="grupoRutPersona">
+                <label for="rut">RUT</label>
+                <input type="text" class="form-control" name="rut" id="rut" required>
+              </div>
+              <div class="form-group" id="grupoRutContacto" style="display:none;">
+                <label for="rut_contacto">RUT Contacto <small class="text-muted">(Opcional)</small></label>
+                <input type="text" class="form-control" name="rut_contacto" id="rut_contacto">
+              </div>
+              <div class="form-group">
+                <label for="correo">Correo</label>
+                <input type="email" class="form-control" name="correo" id="correo" required>
+              </div>
+              <div class="form-group">
+                <label for="telefono">Teléfono</label>
+                <input type="text" class="form-control" name="telefono" id="telefono" required>
+              </div>
+            </div>
+            <div id="camposEmpresa" style="display:none;">
+              <div class="form-group">
+                <label for="nombre_empresa">Nombre de la Empresa</label>
+                <input type="text" class="form-control" name="nombre_empresa" id="nombre_empresa">
+              </div>
+              <div class="form-group">
+                <label for="rut_empresa">RUT Empresa</label>
+                <input type="text" class="form-control" name="rut_empresa" id="rut_empresa">
+              </div>
+              <div class="form-group">
+                <label for="giro">Giro</label>
+                <input type="text" class="form-control" name="giro" id="giro">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="usuario_referidor_id">Usuario Referidor <small class="text-muted">(Opcional - De dónde llegó el cliente)</small></label>
+              <select class="form-control" name="usuario_referidor_id" id="usuario_referidor_id">
+                <option value="">Ninguno</option>
+                {% for user in users %}
+                <option value="{{ user.id }}">{{ user.nombre }} {{ user.apellido }} ({{ user.username }})</option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted">Selecciona el usuario que refirió a este cliente</small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success">Guardar</button>
+          </div>
+          <div id="addClienteMsg"></div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Perfil Cliente -->
+  <div class="modal fade" id="modalPerfilCliente" tabindex="-1" role="dialog" aria-labelledby="modalPerfilClienteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalPerfilClienteLabel">Perfil del Cliente</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" id="perfilClienteBody">
+          <!-- Aquí se insertan los datos dinámicamente -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+  <script>
+    $(function () {
+      // Función para crear una fila de tabla desde un objeto cliente
+      function crearFilaCliente(cliente, index) {
+        var nombreCompleto = '';
+        if (cliente.tipo_cliente === 'empresa') {
+          nombreCompleto = cliente.nombre_empresa + '<br><small>' + cliente.nombre + ' ' + cliente.apellido + '</small>';
+        } else {
+          nombreCompleto = cliente.nombre + ' ' + cliente.apellido;
+        }
+        
+        var estadoBadge = cliente.estado === 'habilitado' 
+          ? '<span class="badge badge-success" style="background-color: green;">Habilitado</span>'
+          : '<span class="badge badge-danger" style="background-color: red;">Deshabilitado</span>';
+        
+        var fila = '<tr data-cliente=\'' + JSON.stringify(cliente) + '\'>' +
+          '<td>' + index + '</td>' +
+          '<td>' + nombreCompleto + '</td>' +
+          '<td>' + cliente.correo + '</td>' +
+          '<td>' + cliente.tipo_cliente + '</td>' +
+          '<td>' + cliente.rut + '</td>' +
+          '<td>' + (cliente.usuario_referidor_nombre || '<span class="text-muted">Sin referidor</span>') + '</td>' +
+          '<td>' + (cliente.last_login || 'Nunca') + '</td>' +
+          '<td><a href="#" class="toggle-estado-cliente" data-cliente-id="' + cliente.id + '">' + estadoBadge + '</a></td>' +
+          '<td>' +
+            '<a href="#" class="btn btn-primary btn-xs btn-ver-cliente" data-toggle="modal" data-target="#modalPerfilCliente" data-cliente=\'' + JSON.stringify(cliente) + '\'><i class="fa fa-folder"></i> Ver </a> ' +
+            '<a href="#" class="btn btn-info btn-xs btn-edit-cliente" data-cliente-id="' + cliente.id + '"><i class="fa fa-pencil"></i> Editar </a> ' +
+            '<a href="#" class="btn btn-danger btn-xs btn-delete-cliente" data-cliente-id="' + cliente.id + '"><i class="fa fa-trash-o"></i> Eliminar </a>' +
+          '</td>' +
+        '</tr>';
+        return fila;
+      }
+      
+      // Función para actualizar una fila específica
+      function actualizarFilaCliente(cliente) {
+        var $tr = $('a.btn-edit-cliente[data-cliente-id="' + cliente.id + '"]').closest('tr');
+        if ($tr.length) {
+          // Actualizar la fila existente
+          var index = $tr.find('td:first').text();
+          $tr.fadeOut(200, function() {
+            $(this).replaceWith(crearFilaCliente(cliente, index));
+            inicializarEventHandlers();
+            $('a.btn-edit-cliente[data-cliente-id="' + cliente.id + '"]').closest('tr').fadeIn(200);
+          });
+        } else {
+          // Si no existe la fila, agregarla al final
+          agregarFilaCliente(cliente);
+        }
+      }
+      
+      // Función para agregar una nueva fila
+      function agregarFilaCliente(cliente) {
+        var $tbody = $('table.table-striped.projects tbody');
+        var nuevoIndex = $tbody.find('tr').length + 1;
+        var $nuevaFila = $(crearFilaCliente(cliente, nuevoIndex));
+        $nuevaFila.hide();
+        $tbody.append($nuevaFila);
+        $nuevaFila.fadeIn(300);
+        inicializarEventHandlers();
+      }
+      
+      // Función para inicializar los event handlers de las filas
+      function inicializarEventHandlers() {
+        // Re-inicializar handlers para botones de editar
+        $('.btn-edit-cliente').off('click').on('click', function() {
+          var $tr = $(this).closest('tr');
+          var cliente = $tr.data('cliente');
+          $('#modalAddClienteLabel').text('Editar cliente');
+          $('#edit_cliente_id').val(cliente.id);
+          $('#tipo_cliente').val(cliente.tipo_cliente).trigger('change');
+          $('#nombre').val(cliente.nombre);
+          $('#apellido').val(cliente.apellido);
+          if (cliente.tipo_cliente === 'empresa') {
+            $('#rut_empresa').val(cliente.rut);
+            $('#rut_contacto').val(cliente.rut_empresa || '');
+          } else {
+            $('#rut').val(cliente.rut);
+          }
+          $('#correo').val(cliente.correo);
+          $('#telefono').val(cliente.telefono);
+          $('#nombre_empresa').val(cliente.nombre_empresa);
+          $('#giro').val(cliente.giro);
+          $('#usuario_referidor_id').val(cliente.usuario_referidor_id || '');
+          // Mantener el estado actual del cliente
+          $('#estado_cliente').val(cliente.estado || 'habilitado');
+          $('#modalAddCliente').modal('show');
+        });
+        
+        // Re-inicializar handlers para botones de eliminar
+        $('.btn-delete-cliente').off('click').on('click', function() {
+          if (!confirm('¿Seguro que deseas eliminar este cliente?')) return;
+          var $tr = $(this).closest('tr');
+          var clienteId = $(this).data('cliente-id');
+          $.ajax({
+            url: '/delete_cliente/' + clienteId,
+            type: 'POST',
+            success: function (response) {
+              if (response.status === 'success') {
+                $tr.fadeOut(300, function() {
+                  $(this).remove();
+                  // Actualizar los índices
+                  $('table.table-striped.projects tbody tr').each(function (i) {
+                    $(this).find('td:first').text(i + 1);
+                  });
+                });
+              } else {
+                alert(response.message || 'Error al eliminar cliente');
+              }
+            },
+            error: function () {
+              alert('Error al eliminar cliente');
+            }
+          });
+        });
+        
+        // Re-inicializar handlers para botones de ver
+        $('.btn-ver-cliente').off('click').on('click', function() {
+          var cliente = $(this).data('cliente');
+          var avatarUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent((cliente.nombre_empresa || cliente.nombre || '') + ' ' + (cliente.apellido || '')) + '&background=0D8ABC&color=fff&size=128';
+          var html = '';
+          html += '<div class="card w-100" style="max-width:700px; margin:0 auto;">';
+          html += '  <div class="card-body">';
+          html += '    <div class="row align-items-center">';
+          html += '      <div class="col-md-4 text-center">';
+          html += '        <img src="' + avatarUrl + '" alt="avatar" class="rounded-circle mb-2" style="width:110px; height:110px; object-fit:cover;">';
+          html += '      </div>';
+          html += '      <div class="col-md-8">';
+          if (cliente.tipo_cliente === 'empresa') {
+            html += '        <h3 class="mb-1">' + (cliente.nombre_empresa || '') + '</h3>';
+            html += '        <div class="text-muted mb-3" style="font-size:1.1em;">Empresa &mdash; Representante: ' + (cliente.nombre || '') + ' ' + (cliente.apellido || '') + '</div>';
+            html += '        <table class="table table-sm mb-3">';
+            html += '          <tbody>';
+            html += '            <tr><th class="text-end" style="width: 40%">Nombre Empresa:</th><td>' + (cliente.nombre_empresa || '') + '</td></tr>';
+            html += '            <tr><th class="text-end">RUT Empresa:</th><td>' + (cliente.rut || '') + '</td></tr>';
+            html += '            <tr><th class="text-end">Giro:</th><td>' + (cliente.giro || '') + '</td></tr>';
+            html += '          </tbody>';
+            html += '        </table>';
+            html += '        <h6 class="mt-3 mb-2 text-secondary">Datos del Representante</h6>';
+            html += '        <table class="table table-sm">';
+            html += '          <tbody>';
+            html += '            <tr><th class="text-end" style="width: 40%">Nombre:</th><td>' + (cliente.nombre || '') + '</td></tr>';
+            html += '            <tr><th class="text-end">Apellidos:</th><td>' + (cliente.apellido || '') + '</td></tr>';
+            html += '            <tr><th class="text-end">RUT Contacto:</th><td>' + (cliente.rut_empresa || 'No especificado') + '</td></tr>';
+            html += '            <tr><th class="text-end">Correo:</th><td>' + (cliente.correo || '') + '</td></tr>';
+            html += '            <tr><th class="text-end">Teléfono:</th><td>' + (cliente.telefono || '') + '</td></tr>';
+            if (cliente.usuario_referidor_nombre) {
+              html += '            <tr><th class="text-end">Usuario Referidor:</th><td>' + (cliente.usuario_referidor_nombre || '') + '</td></tr>';
+            }
+            html += '          </tbody>';
+            html += '        </table>';
+          } else {
+            html += '        <h3 class="mb-1">' + (cliente.nombre || '') + ' ' + (cliente.apellido || '') + '</h3>';
+            html += '        <div class="text-muted mb-3" style="font-size:1.1em;">Persona Natural</div>';
+            html += '        <table class="table table-sm">';
+            html += '          <tbody>';
+            html += '            <tr><th class="text-end" style="width: 40%">Nombre:</th><td>' + (cliente.nombre || '') + '</td></tr>';
+            html += '            <tr><th class="text-end">Apellidos:</th><td>' + (cliente.apellido || '') + '</td></tr>';
+            html += '            <tr><th class="text-end">RUT:</th><td>' + (cliente.rut || '') + '</td></tr>';
+            html += '            <tr><th class="text-end">Correo:</th><td>' + (cliente.correo || '') + '</td></tr>';
+            html += '            <tr><th class="text-end">Teléfono:</th><td>' + (cliente.telefono || '') + '</td></tr>';
+            if (cliente.usuario_referidor_nombre) {
+              html += '            <tr><th class="text-end">Usuario Referidor:</th><td>' + (cliente.usuario_referidor_nombre || '') + '</td></tr>';
+            }
+            html += '          </tbody>';
+            html += '        </table>';
+          }
+          html += '      </div>';
+          html += '    </div>';
+          html += '  </div>';
+          html += '</div>';
+          $('#perfilClienteBody').html(html);
+        });
+        
+        // Re-inicializar handlers para toggle de estado
+        $('.toggle-estado-cliente').off('click').on('click', function (e) {
+          e.preventDefault();
+          var $this = $(this);
+          var clienteId = $this.data('cliente-id');
+          $.ajax({
+            url: '/toggle_cliente_status/' + clienteId,
+            type: 'POST',
+            success: function (response) {
+              if (response.status === 'success') {
+                if (response.new_status === 'habilitado') {
+                  $this.html('<span class="badge badge-success" style="background-color: green;">Habilitado</span>');
+                } else {
+                  $this.html('<span class="badge badge-danger" style="background-color: red;">Deshabilitado</span>');
+                }
+              } else {
+                alert(response.message || 'Error al cambiar el estado');
+              }
+            },
+            error: function () {
+              alert('Error al cambiar el estado');
+            }
+          });
+        });
+      }
+      
+      $('#addClienteForm').on('submit', function (e) {
+        e.preventDefault();
+        var $form = $(this);
+        var $msg = $('#addClienteMsg');
+        var clienteId = $('#edit_cliente_id').val();
+        var url = clienteId ? '/edit_cliente/' + clienteId : '/add_cliente';
+        var data = $form.serialize();
+        $.ajax({
+          url: url,
+          type: 'POST',
+          data: data,
+          success: function (response) {
+            if (response.status === 'success') {
+              $msg.html('<div class="alert alert-success">' + response.message + '</div>');
+              $form[0].reset();
+              $('#edit_cliente_id').val('');
+              $('#modalAddCliente').modal('hide');
+              setTimeout(function() {
+                if (clienteId) {
+                  // Actualizar fila existente
+                  actualizarFilaCliente(response.cliente);
+                } else {
+                  // Agregar nueva fila
+                  agregarFilaCliente(response.cliente);
+                }
+              }, 300);
+            } else {
+              $msg.html('<div class="alert alert-danger">' + response.message + '</div>');
+            }
+          },
+          error: function (xhr) {
+            $msg.html('<div class="alert alert-danger">Error al guardar cliente</div>');
+          }
+        });
+      });
+      $('#modalAddCliente').on('hidden.bs.modal', function () {
+        $('#addClienteMsg').html('');
+        $('#edit_cliente_id').val('');
+        $('#estado_cliente').val('habilitado'); // Resetear a valor por defecto
+        $('#modalAddClienteLabel').text('Registrar nuevo cliente');
+        $('#tipo_cliente').val('').trigger('change');
+      });
+      // Filtrado de clientes en la tabla
+      $('#clienteSearchInput').on('keyup', function () {
+        var value = $(this).val().toLowerCase();
+        $('table.table-striped.projects tbody tr').filter(function () {
+          var nombre = $(this).find('td:eq(1)').text().toLowerCase();
+          var apellido = $(this).find('td:eq(2)').text().toLowerCase();
+          var correo = $(this).find('td:eq(3)').text().toLowerCase();
+          var tipo_cliente = $(this).find('td:eq(4)').text().toLowerCase();
+          var rut = $(this).find('td:eq(5)').text().toLowerCase();
+          var nombre_empresa = $(this).find('td:eq(6)').text().toLowerCase();
+          $(this).toggle(
+            nombre.indexOf(value) > -1 ||
+            apellido.indexOf(value) > -1 ||
+            correo.indexOf(value) > -1 ||
+            tipo_cliente.indexOf(value) > -1 ||
+            rut.indexOf(value) > -1 ||
+            nombre_empresa.indexOf(value) > -1
+          );
+        });
+        // Actualizar los índices de la primera columna después de filtrar
+        $('table.table-striped.projects tbody tr:visible').each(function (i) {
+          $(this).find('td:first').text(i + 1);
+        });
+      });
+      $('#tipo_cliente').on('change', function () {
+        var tipo = $(this).val();
+        if (tipo === 'empresa') {
+          $('#camposEmpresa').show();
+          $('#nombre_empresa, #rut_empresa, #giro').attr('required', true);
+          // Ocultar RUT de persona, mostrar RUT de contacto (opcional)
+          $('#grupoRutPersona').hide();
+          $('#rut').removeAttr('required').val('');
+          $('#grupoRutContacto').show();
+        } else {
+          $('#camposEmpresa').hide();
+          $('#nombre_empresa, #rut_empresa, #giro').removeAttr('required').val('');
+          // Mostrar RUT de persona, ocultar RUT de contacto
+          $('#grupoRutPersona').show();
+          $('#rut').attr('required', true);
+          $('#grupoRutContacto').hide();
+          $('#rut_contacto').val('');
+        }
+      });
+      // Inicializar event handlers al cargar la página
+      inicializarEventHandlers();
+    });
+  </script>
+{% endblock javascripts %}

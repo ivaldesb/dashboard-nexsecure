@@ -1,0 +1,90 @@
+{% extends "base_site.html" %}
+
+{% block title %}Reportes Personalizados{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-file-pdf-o"></i> Reportes Personalizados</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Generar Reportes</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i> Genera reportes personalizados de tus campañas y métricas de marketing.
+              </div>
+
+              <form method="POST" action="/marketing/analisis/reportes/generar" class="form-horizontal form-label-left">
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="tipo_reporte">Tipo de Reporte *</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <select id="tipo_reporte" name="tipo_reporte" class="form-control" required>
+                      <option value="">Seleccione...</option>
+                      <option value="general">Reporte General de Campañas</option>
+                      <option value="roi">Reporte de ROI</option>
+                      <option value="embudo">Reporte de Embudo de Conversión</option>
+                      <option value="presupuesto">Reporte de Presupuesto y Gastos</option>
+                      <option value="cliente">Reporte por Cliente</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="fecha_inicio">Fecha Inicio</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="fecha_fin">Fecha Fin</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="date" id="fecha_fin" name="fecha_fin" class="form-control">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="formato">Formato</label>
+                  <div class="col-md-6 col-sm-6 col-xs-12">
+                    <select id="formato" name="formato" class="form-control">
+                      <option value="pdf">PDF</option>
+                      <option value="excel">Excel</option>
+                      <option value="csv">CSV</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="ln_solid"></div>
+                <div class="form-group">
+                  <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                    <button type="submit" class="btn btn-success"><i class="fa fa-file-pdf-o"></i> Generar Reporte</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+

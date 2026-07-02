@@ -1,0 +1,89 @@
+{% extends "base_site.html" %}
+
+{% block title %}Atribución de Ventas{% endblock title %}
+
+{% block stylesheets %}
+  {{ super() }}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="right_col" role="main">
+    <div class="">
+      <div class="page-title">
+        <div class="title_left">
+          <h3><i class="fa fa-pie-chart"></i> Atribución de Ventas</h3>
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div class="row">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+          <div class="x_panel">
+            <div class="x_title">
+              <h2>Atribución de Ventas por Campaña</h2>
+              <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+              <p class="text-muted">Identifica qué campañas están generando más ingresos y conversiones.</p>
+
+              <table class="table table-striped table-bordered">
+                <thead>
+                  <tr>
+                    <th>Campaña</th>
+                    <th>Plataforma</th>
+                    <th>Conversiones</th>
+                    <th>Ingresos Generados</th>
+                    <th>% del Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% set total_ingresos = atribucion|sum(attribute='ingresos') %}
+                  {% for item in atribucion %}
+                  <tr>
+                    <td>{{ item.campana.nombre }}</td>
+                    <td><span class="label label-info">{{ item.campana.plataforma }}</span></td>
+                    <td>{{ item.conversiones }}</td>
+                    <td>${{ "{:,.0f}".format(item.ingresos) }}</td>
+                    <td>
+                      {% if total_ingresos > 0 %}
+                        {% set porcentaje = (item.ingresos / total_ingresos * 100) %}
+                        <div class="progress">
+                          <div class="progress-bar progress-bar-success" role="progressbar" style="width: {{ porcentaje }}%">
+                            {{ "%.1f"|format(porcentaje) }}%
+                          </div>
+                        </div>
+                      {% else %}
+                        0%
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="5" class="text-center text-muted">No hay datos de atribución disponibles</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                {% if atribucion|length > 0 %}
+                <tfoot>
+                  <tr style="background-color: #f5f5f5; font-weight: bold;">
+                    <td colspan="2">TOTAL</td>
+                    <td>{{ atribucion|sum(attribute='conversiones') }}</td>
+                    <td>${{ "{:,.0f}".format(total_ingresos) }}</td>
+                    <td>100%</td>
+                  </tr>
+                </tfoot>
+                {% endif %}
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ super() }}
+{% endblock javascripts %}
+
