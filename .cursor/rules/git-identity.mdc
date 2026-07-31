@@ -1,0 +1,31 @@
+---
+description: Git ops con identidad y firma SSH del usuario (1Password); el agente no es autor ni firmante
+alwaysApply: true
+---
+
+# Identidad Git (este repositorio)
+
+El agente **ayuda a gestionar** ramas, commits, push y PRs. La **autoría y la firma** son solo del usuario.
+
+## Identidad y firma
+
+- Autor/committer = `user.name` / `user.email` del config del usuario. No sobrescribir con env (`GIT_AUTHOR_*`, `GIT_COMMITTER_*`, etc.).
+- Firma SSH vía 1Password (`commit.gpgsign`, `gpg.format=ssh`, `gpg.ssh.program=op-ssh-sign`). No desactivar firma ni usar `--no-gpg-sign`.
+- No tocar `git config` (ni local ni global): nombre, email, signingkey, IdentityAgent, etc.
+- No usar claves/sockets del agente Cursor (`~/.ssh/agent/*`). Respetar `IdentityAgent ~/.1password/agent.sock`.
+- No añadir trailers de co-autoría del agente (`Co-authored-by: Cursor`, `Co-authored-by: Claude`, etc.). El commit no debe mencionar al agente como firmante ni co-autor.
+
+## Operación
+
+- Commitear cuando el usuario lo pida o el pedido incluya commit/PR.
+- Antes de commit/push: si falla la firma, avisar (1Password / `agent.sock`); no inventar workaround que firmen con otra clave.
+- Push y PR solo con pedido explícito (o cuando el pedido lo incluya). Seguir `git-branching.mdc`.
+
+## Si falla push/commit (`agent refused operation` / `Permission denied (publickey)`)
+
+Causa habitual: **1Password bloqueado** (el agente lista la clave pero no firma). Logs: `unable to obtain setting state, dropping signature request`.
+
+1. Pedir al usuario que **desbloquee 1Password** en el escritorio (master password / biometric).
+2. Verificar: `SSH_AUTH_SOCK=$HOME/.1password/agent.sock ssh -T git@github.com` → debe decir `Hi <user>!`.
+3. No usar `~/.ssh/agent/*` de Cursor ni desactivar `commit.gpgsign` / `--no-gpg-sign`.
+4. Este repo puede no tener hooks locales de 1Password; **igual aplican** las mismas reglas de identidad y firma anteriores.
