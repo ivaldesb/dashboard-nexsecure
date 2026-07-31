@@ -3,10 +3,13 @@ import pymysql
 from pymysql.err import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DB_HOST = os.environ.get("DB_HOST", "147.124.195.34")
 DB_NAME = os.environ.get("DB_NAME", "nexsecur_nexsecure")
-DB_USER = os.environ.get("DB_USER", "nexsecur_web")
+DB_USER = os.environ.get("DB_USER", "nexsecur_backend_dashboard")
 DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
 DB_PORT = int(os.environ.get("DB_PORT", "3306"))
 
