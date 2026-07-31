@@ -1,0 +1,16 @@
+---
+description: Usar sub-agentes para listas de tareas e implementación de planes
+alwaysApply: true
+---
+
+# Sub-agentes para planes y listas de tareas
+
+Cuando el usuario pida una **lista de tareas**, un **plan de implementación**, o ejecutar un plan con varios ítems independientes:
+
+1. **Descomponer** el trabajo en tareas paralelizables (código, templates, static, docs, etc.).
+2. **Delegar** cada bloque independiente a un sub-agente (`Task`) en paralelo cuando no haya dependencias fuertes.
+3. El agente principal **solo** orquesta: define el plan, lanza sub-agentes, revisa resultados, integra y perfecciona lo esencial (conflictos, UX, calidad, commits/PR si se piden).
+4. No implementar en serie en el agente principal lo que un sub-agente puede hacer en paralelo, salvo que sea una tarea única y trivial (1–2 archivos, sin paralelismo útil).
+5. Tras los sub-agentes: sintetizar, verificar que la app arranca / rutas clave si aplica, y cerrar gaps.
+
+Excepción: bugfix puntual de un solo archivo, o pregunta de consulta sin implementación.

@@ -1,0 +1,20 @@
+---
+description: Toda solicitud de desarrollo crea rama desde develop con el nombre del pedido
+alwaysApply: true
+---
+
+# Git branching (este repositorio)
+
+Cada vez que se solicite un desarrollo:
+
+1. Asegurar `develop` local al día (`fetch` + `checkout develop` + `pull`).
+2. Crear una rama **desde `develop`** cuyo nombre describa lo pedido (kebab-case), p. ej. `feat/usuarios-filtro`, `fix/login-redirect`.
+3. Empezar a trabajar **solo** en esa rama. No editar ni commitear en `main`/`develop` directo.
+4. Push al remoto solo cuando el usuario lo pida (o cuando el pedido incluya subir la rama).
+5. Autoría y firma: ver `git-identity.mdc` (clave SSH 1Password del usuario; el agente no firma ni co-autorea).
+
+Flujo: feature/fix → PR a `develop` → (cuando estable) `develop` → `main`.
+
+Si `develop` no existe en el remoto, crearla desde `main` y pushearla antes de ramificar.
+
+Si solo existe `master`, tratarla como legado: renombrar/usar `main` como producción.
