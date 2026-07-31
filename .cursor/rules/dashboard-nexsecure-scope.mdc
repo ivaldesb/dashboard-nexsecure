@@ -1,0 +1,32 @@
+---
+description: Alcance del repo — dashboard Flask NexSecure (no landing)
+alwaysApply: true
+---
+
+# Dashboard NexSecure (alcance)
+
+Este repo es el **dashboard** NexSecure (Flask + Jinja templates + PyMySQL/MariaDB). **No** es la landing (esa está en `Proyectos/Web`).
+
+## Estructura
+
+- Entry: `app.py`
+- Modelos / DB: `models.py`
+- UI: `templates/`, `static/`
+- Config: `.env` vía `python-dotenv` — **no** commitear secretos ni tocar `.env` en commits
+
+## Stack
+
+Flask, Flask-Login, PyMySQL, reportlab, Werkzeug, python-dotenv.
+
+No asumir Next.js, Vercel, React ni App Router.
+
+## Desarrollo local
+
+```bash
+source .venv/bin/activate   # o venv del proyecto
+python app.py               # → http://127.0.0.1:5000
+```
+
+## Skill del proyecto
+
+Si existe, invocar / seguir: `.cursor/skills/dashboard-nexsecure/`.
