@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left">
+    <h3>Dashboard</h3>
+  </div>
+</div>
+<p class="nx-page-sub">Resumen de lo que tienes a la vista ahora mismo.</p>
+
+<div class="row">
+  <div class="col-md-4 col-sm-6 col-xs-12">
+    <div class="x_panel">
+      <div class="nx-kpi">
+        <span class="nx-kpi-label">Proyectos</span>
+        <span class="nx-kpi-value">{{ total_proyectos }}</span>
+        <span class="nx-kpi-hint">Visibles para tu cuenta</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 col-sm-6 col-xs-12">
+    <div class="x_panel">
+      <div class="nx-kpi">
+        <span class="nx-kpi-label">Incidencias</span>
+        <span class="nx-kpi-value">{{ incidencias|length }}</span>
+        <span class="nx-kpi-hint">Recientes en tus proyectos</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 col-sm-6 col-xs-12">
+    <div class="x_panel">
+      <div class="nx-kpi">
+        <span class="nx-kpi-label">Agenda</span>
+        <span class="nx-kpi-value">{{ eventos|length }}</span>
+        <span class="nx-kpi-hint">Próximos eventos asignados</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 col-xs-12">
+    <div class="x_panel">
+      <div class="x_title"><h2>Proyectos recientes</h2><div class="clearfix"></div></div>
+      <ul class="nx-list-clean">
+        {% for p in proyectos %}
+          <li>
+            <a href="{% url 'proyectos:detail' p.pk %}" target="_blank">{{ p.nombre }}</a>
+            <span class="nx-meta">
+              <span class="label" style="background-color:{{ p.estado.color }}">{{ p.estado.nombre }}</span>
+            </span>
+          </li>
+        {% empty %}
+          <li class="nx-empty">Sin proyectos todavía</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-md-6 col-xs-12">
+    <div class="x_panel">
+      <div class="x_title"><h2>Incidencias recientes</h2><div class="clearfix"></div></div>
+      <ul class="nx-list-clean">
+        {% for i in incidencias %}
+          <li>
+            <span>{{ i.titulo }}</span>
+            <span class="nx-meta">{{ i.proyecto.nombre }}</span>
+          </li>
+        {% empty %}
+          <li class="nx-empty">Sin incidencias</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

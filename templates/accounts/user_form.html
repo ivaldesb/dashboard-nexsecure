@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-title"><div class="title_left"><h3>{{ title }}</h3></div></div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="form-group">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<div class="text-danger">{{ field.errors }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    {% if not edit_user %}
+      <div class="form-group">
+        <label>Roles</label>
+        {% for r in roles %}
+          <div class="checkbox"><label><input type="checkbox" name="roles" value="{{ r.pk }}"> {{ r.name }}</label></div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="form-group">
+        <label>Nueva contraseña (opcional)</label>
+        <input type="password" name="new_password" class="form-control" autocomplete="new-password">
+      </div>
+    {% endif %}
+    <button class="btn btn-success" type="submit">Guardar</button>
+    <a class="btn btn-default" href="{% url 'accounts:user_list' %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

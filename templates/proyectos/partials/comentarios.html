@@ -1,0 +1,23 @@
+<div class="x_panel" id="proyecto-comentarios">
+  <div class="x_title"><h2>Comentarios del proyecto</h2><div class="clearfix"></div></div>
+  <div class="x_content">
+    {% for c in comentarios %}
+      <div class="well well-sm">
+        <strong>{{ c.autor|default:"Usuario" }}</strong>
+        <span class="nx-meta" style="float:right">{{ c.created_at|date:"d/m/Y H:i" }}</span>
+        <p style="margin:8px 0 0">{{ c.texto }}</p>
+      </div>
+    {% empty %}
+      <p class="nx-empty">Sin comentarios aún. El hilo permanece visible en todas las pestañas.</p>
+    {% endfor %}
+    {% if comentario_form_url %}
+    <form method="post" action="{{ comentario_form_url }}" style="margin-top:12px">
+      {% csrf_token %}
+      <div class="form-group">
+        <textarea name="texto" class="form-control" rows="2" required placeholder="Escribe un comentario..."></textarea>
+      </div>
+      <button class="btn btn-primary btn-sm" type="submit">Comentar</button>
+    </form>
+    {% endif %}
+  </div>
+</div>

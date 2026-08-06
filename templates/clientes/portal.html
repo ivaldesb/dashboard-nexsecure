@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Portal cliente{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Mi portal</h3></div>
+</div>
+<p class="nx-page-sub">Solo ves proyectos y presupuestos vinculados a tu cuenta.</p>
+
+{% if denied %}
+<div class="x_panel">
+  <div class="alert alert-warning">No tienes un perfil de cliente asociado. Contacta al administrador.</div>
+</div>
+{% else %}
+<div class="x_panel">
+  <div class="x_title"><h2>{{ cliente.display_name }}</h2><div class="clearfix"></div></div>
+  <p class="nx-page-sub" style="margin:0">
+    {% if cliente.email %}{{ cliente.email }}{% endif %}
+    {% if cliente.razon_social %} · {{ cliente.razon_social }}{% endif %}
+    {% if cliente.ciudad %} · {{ cliente.ciudad }}{% endif %}
+  </p>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="x_panel">
+      <div class="x_title"><h2>Mis proyectos</h2><div class="clearfix"></div></div>
+      <ul class="nx-list-clean">
+        {% for p in proyectos %}
+          <li>
+            <a href="{% url 'proyectos:detail' p.pk %}" target="_blank">{{ p.nombre }}</a>
+            <span class="nx-meta">
+              {% if p.estado %}<span class="label" style="background-color:{{ p.estado.color }}">{{ p.estado.nombre }}</span>{% endif %}
+            </span>
+          </li>
+        {% empty %}
+          <li class="nx-empty">Sin proyectos visibles</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="x_panel">
+      <div class="x_title"><h2>Presupuestos</h2><div class="clearfix"></div></div>
+      <ul class="nx-list-clean">
+        {% for pr in presupuestos %}
+          <li>
+            <a href="{% url 'presupuestos:detail' pr.pk %}">{{ pr.titulo }}</a>
+            <span class="nx-meta">{{ pr.get_estado_display }} · ${{ pr.total_items|floatformat:0 }}</span>
+          </li>
+        {% empty %}
+          <li class="nx-empty">Sin presupuestos</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

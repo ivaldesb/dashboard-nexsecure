@@ -1,0 +1,42 @@
+<span data-nx-modal-title class="hidden">{{ title }}</span>
+{% if presupuesto %}<p class="nx-page-sub" style="margin-top:0">Presupuesto: {{ presupuesto.titulo }}</p>{% endif %}
+<div class="matriz-form matriz-row">
+  <div class="row">
+    <div class="col-md-3 form-group">
+      <label>{{ form.tipo.label }}</label>
+      {{ form.tipo.errors }}{{ form.tipo }}
+    </div>
+    <div class="col-md-5 form-group">
+      <label>{{ form.referencia.label }}</label>
+      {{ form.referencia.errors }}{{ form.referencia }}
+    </div>
+    <div class="col-md-2 form-group">
+      <label>{{ form.cantidad.label }}</label>
+      {{ form.cantidad.errors }}{{ form.cantidad }}
+    </div>
+    <div class="col-md-2 form-group matriz-costo-wrap">
+      <label>{{ form.costo_insumo.label }}</label>
+      {{ form.costo_insumo.errors }}{{ form.costo_insumo }}
+    </div>
+  </div>
+  <div class="form-group">
+    <label>{{ form.descripcion.label }}</label>
+    {{ form.descripcion.errors }}{{ form.descripcion }}
+  </div>
+  <h5>Porcentajes (Material)</h5>
+  <div class="row matriz-pct-wrap">
+    <div class="col-md-3 form-group"><label>% Maquila</label>{{ form.pct_maquila }}</div>
+    <div class="col-md-3 form-group"><label>% Instalación</label>{{ form.pct_instalacion }}</div>
+    <div class="col-md-3 form-group"><label>% Desinstalación</label>{{ form.pct_desinstalacion }}</div>
+    <div class="col-md-3 form-group"><label>% Ferretería</label>{{ form.pct_ferreteria }}</div>
+    <div class="col-md-3 form-group"><label>% Flete</label>{{ form.pct_flete }}</div>
+    <div class="col-md-3 form-group"><label>% GG</label>{{ form.pct_gg }}</div>
+    <div class="col-md-3 form-group"><label>% Utilidad</label>{{ form.pct_utilidad }}</div>
+  </div>
+  <h5>Servicio (manual)</h5>
+  <div class="row">
+    <div class="col-md-4 form-group"><label>{{ form.utilidad_manual.label }}</label>{{ form.utilidad_manual }}</div>
+    <div class="col-md-4 form-group"><label>{{ form.neto_unidad.label }}</label>{{ form.neto_unidad }}</div>
+    <div class="col-md-4 form-group"><label>{{ form.precio_unitario.label }}</label>{{ form.precio_unitario }}</div>
+  </div>
+</div>

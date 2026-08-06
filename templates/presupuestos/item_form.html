@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ title }}{% endblock %}
+{% block stylesheets %}
+<style>
+  .matriz-calc, .matriz-readonly { background: #d9edf7 !important; }
+  .matriz-form .form-group { margin-bottom: 10px; }
+  .matriz-preview label { font-weight: normal; color: #666; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="x_panel">
+  <div class="x_title"><h2>{{ title }}</h2><div class="clearfix"></div></div>
+  {% if presupuesto %}<p><strong>Presupuesto:</strong> {{ presupuesto.titulo }}</p>{% endif %}
+  <form method="post" class="matriz-form matriz-row">{% csrf_token %}
+    <div class="row">
+      <div class="col-md-3 form-group">
+        <label>{{ form.tipo.label }}</label>
+        {{ form.tipo.errors }}{{ form.tipo }}
+      </div>
+      <div class="col-md-5 form-group">
+        <label>{{ form.referencia.label }}</label>
+        {{ form.referencia.errors }}{{ form.referencia }}
+      </div>
+      <div class="col-md-2 form-group">
+        <label>{{ form.cantidad.label }}</label>
+        {{ form.cantidad.errors }}{{ form.cantidad }}
+      </div>
+      <div class="col-md-2 form-group matriz-costo-wrap">
+        <label>{{ form.costo_insumo.label }}</label>
+        {{ form.costo_insumo.errors }}{{ form.costo_insumo }}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12 form-group">
+        <label>{{ form.descripcion.label }} <small class="text-muted">(si vacío, se usa referencia)</small></label>
+        {{ form.descripcion.errors }}{{ form.descripcion }}
+      </div>
+    </div>
+
+    <h4>Porcentajes (Material)</h4>
+    <div class="row matriz-pct-wrap">
+      <div class="col-md-3 form-group"><label>% Maquila</label>{{ form.pct_maquila }}</div>
+      <div class="col-md-3 form-group"><label>% Instalación</label>{{ form.pct_instalacion }}</div>
+      <div class="col-md-3 form-group"><label>% Desinstalación</label>{{ form.pct_desinstalacion }}</div>
+      <div class="col-md-3 form-group"><label>% Ferretería</label>{{ form.pct_ferreteria }}</div>
+      <div class="col-md-3 form-group"><label>% Flete</label>{{ form.pct_flete }}</div>
+      <div class="col-md-3 form-group"><label>% GG</label>{{ form.pct_gg }}</div>
+      <div class="col-md-3 form-group"><label>% Utilidad</label>{{ form.pct_utilidad }}</div>
+    </div>
+
+    <h4>Servicio (manual)</h4>
+    <div class="row">
+      <div class="col-md-4 form-group">
+        <label>{{ form.utilidad_manual.label }}</label>
+        {{ form.utilidad_manual.errors }}{{ form.utilidad_manual }}
+      </div>
+      <div class="col-md-4 form-group">
+        <label>{{ form.neto_unidad.label }}</label>
+        {{ form.neto_unidad.errors }}{{ form.neto_unidad }}
+      </div>
+      <div class="col-md-4 form-group">
+        <label>{{ form.precio_unitario.label }} <small>(PDF)</small></label>
+        {{ form.precio_unitario.errors }}{{ form.precio_unitario }}
+      </div>
+    </div>
+
+    <h4 class="matriz-preview">Vista previa valores</h4>
+    <div class="row">
+      <div class="col-md-3 form-group"><label>VU Maquila</label><input class="form-control matriz-readonly matriz-vu-maquila" readonly></div>
+      <div class="col-md-3 form-group"><label>VU Instalación</label><input class="form-control matriz-readonly matriz-vu-instalacion" readonly></div>
+      <div class="col-md-3 form-group"><label>VU Desinstalación</label><input class="form-control matriz-readonly matriz-vu-desinstalacion" readonly></div>
+      <div class="col-md-3 form-group"><label>VU Ferretería</label><input class="form-control matriz-readonly matriz-vu-ferreteria" readonly></div>
+      <div class="col-md-3 form-group"><label>VU Flete</label><input class="form-control matriz-readonly matriz-vu-flete" readonly></div>
+      <div class="col-md-3 form-group"><label>VU GG</label><input class="form-control matriz-readonly matriz-vu-gg" readonly></div>
+      <div class="col-md-3 form-group"><label>VU Utilidad</label><input class="form-control matriz-readonly matriz-vu-utilidad" readonly></div>
+      <div class="col-md-3 form-group"><label>Subtotal</label><input class="form-control matriz-readonly matriz-subtotal" readonly></div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 form-group">
+        <label>{{ form.incidencia.label }}</label>
+        {{ form.incidencia.errors }}{{ form.incidencia }}
+      </div>
+      <div class="col-md-6 form-group">
+        <label>{{ form.visita_mantenimiento_id.label }}</label>
+        {{ form.visita_mantenimiento_id.errors }}{{ form.visita_mantenimiento_id }}
+      </div>
+    </div>
+
+    <button class="btn btn-success" type="submit">Guardar</button>
+    <a class="btn btn-default" href="{{ cancel_url }}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
+{% block javascripts %}
+<script src="{% static 'js/matriz_costos.js' %}"></script>
+{% endblock %}

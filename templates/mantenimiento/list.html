@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Mantenimiento — {{ proyecto.nombre }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Mantenimiento — {{ proyecto.nombre }}</h3></div>
+  <div class="title_right">
+    <a class="btn btn-success" href="{% url 'mantenimiento:create' proyecto.pk %}" data-nx-modal data-nx-modal-title="Nueva visita">Nueva visita</a>
+  </div>
+</div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Tipo</th>
+        <th>Servicio</th>
+        <th>Estado</th>
+        <th>Creado por</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for v in visitas %}
+      <tr>
+        <td>{{ v.fecha|date:"d/m/Y" }}</td>
+        <td>{{ v.get_tipo_display }}</td>
+        <td>{{ v.tipo_servicio }}</td>
+        <td>{{ v.get_estado_display }}</td>
+        <td>{{ v.creado_por.username|default:"—" }}</td>
+        <td><a href="{% url 'mantenimiento:detail' v.pk %}">Ver</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Sin visitas de mantenimiento</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<a class="btn btn-default" href="{% url 'proyectos:detail' proyecto.pk %}">Volver al proyecto</a>
+{% endblock %}

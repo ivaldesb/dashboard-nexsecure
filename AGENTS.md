@@ -1,6 +1,6 @@
 # AGENTS — Dashboard NexSecure
 
-Dashboard Flask (Jinja + PyMySQL/MariaDB). No es la landing web.
+CRM/Dashboard **Django** (templates Django + SQLite local / MariaDB opcional). No es la landing web. El código Flask antiguo vive en `legacy/` (solo referencia, no se ejecuta).
 
 ## Contexto del agente
 
@@ -19,8 +19,10 @@ Dashboard Flask (Jinja + PyMySQL/MariaDB). No es la landing web.
 ## Local
 
 ```bash
-source .venv/bin/activate
-python app.py   # :5000
+.venv\Scripts\activate        # Windows (source .venv/bin/activate en unix)
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver    # http://127.0.0.1:8000
 ```
 
-Config en `.env` (no commitear). No desplegar a prod a mano desde el agente.
+Config en `.env` (no commitear). Smoke test: `python manage.py test core`. No desplegar a prod a mano desde el agente.

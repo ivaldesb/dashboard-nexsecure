@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ proyecto.nombre }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left">
+    <h3>
+      {{ proyecto.nombre }}
+      <small>{{ proyecto.estado.nombre }}</small>
+      {% if proyecto.codigo %}<span class="nx-code">#{{ proyecto.codigo }}</span>{% endif %}
+    </h3>
+  </div>
+  <div class="title_right">
+    <a class="btn btn-default" href="{% url 'proyectos:edit' proyecto.pk %}">Editar</a>
+    <a class="btn btn-primary" href="{% url 'proyectos:pdf_reporte' proyecto.pk %}" target="_blank">Descargar PDF</a>
+  </div>
+</div>
+<p class="nx-page-sub">Detalle del proyecto · abre en pestaña dedicada</p>
+
+<ul class="nav nav-tabs">
+  <li class="{% if tab == 'resumen' %}active{% endif %}"><a href="?tab=resumen">General</a></li>
+  <li class="{% if tab == 'activos' %}active{% endif %}"><a href="?tab=activos">Activos</a></li>
+  <li class="{% if tab == 'incidencias' %}active{% endif %}"><a href="?tab=incidencias">Incidencias</a></li>
+  <li class="{% if tab == 'documentos' %}active{% endif %}"><a href="?tab=documentos">Documentos</a></li>
+  <li class="{% if tab == 'mantenimiento' %}active{% endif %}"><a href="?tab=mantenimiento">Mantenimiento</a></li>
+  <li class="{% if tab == 'presupuestos' %}active{% endif %}"><a href="?tab=presupuestos">Presupuestos</a></li>
+  <li class="{% if tab == 'timeline' %}active{% endif %}"><a href="?tab=timeline">Línea de tiempo</a></li>
+  <li class="{% if tab == 'descargas' %}active{% endif %}"><a href="?tab=descargas">Descargas</a></li>
+</ul>
+
+<div class="x_panel nx-tab-panel">
+  {% if tab == 'resumen' %}
+    {% include "proyectos/partials/tab_resumen.html" %}
+  {% elif tab == 'activos' %}
+    {% include "proyectos/partials/tab_activos.html" %}
+  {% elif tab == 'incidencias' %}
+    {% include "proyectos/partials/tab_incidencias.html" %}
+  {% elif tab == 'documentos' %}
+    {% include "proyectos/partials/tab_documentos.html" %}
+  {% elif tab == 'mantenimiento' %}
+    {% include "proyectos/partials/tab_mantenimiento.html" %}
+  {% elif tab == 'presupuestos' %}
+    {% include "proyectos/partials/tab_presupuestos.html" %}
+  {% elif tab == 'timeline' %}
+    {% include "proyectos/partials/tab_timeline.html" %}
+  {% elif tab == 'descargas' %}
+    {% include "proyectos/partials/tab_descargas.html" %}
+  {% endif %}
+</div>
+
+{% include "proyectos/partials/comentarios.html" %}
+{% endblock %}

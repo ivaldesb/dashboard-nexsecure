@@ -1,0 +1,91 @@
+{% load l10n %}
+<div class="row">
+  <div class="col-md-5">
+    <h4>Clientes</h4>
+    <ul>{% for c in proyecto.clientes.all %}<li>{{ c.display_name }}</li>{% empty %}<li>—</li>{% endfor %}</ul>
+    <h4>Equipo</h4>
+    <ul>{% for u in proyecto.equipo.all %}<li>{{ u.username }}{% if u.tag %} ({{ u.tag }}){% endif %}</li>{% empty %}<li>—</li>{% endfor %}</ul>
+    <p><strong>Estado:</strong> {{ proyecto.estado.nombre }}</p>
+    {% if not is_cliente_view %}
+    <form method="post" action="{% url 'proyectos:change_estado' proyecto.pk %}" class="form-inline">
+      {% csrf_token %}
+      <select name="estado" class="form-control">
+        {% for e in estados %}<option value="{{ e.pk }}" {% if e.pk == proyecto.estado_id %}selected{% endif %}>{{ e.nombre }}</option>{% endfor %}
+      </select>
+      <button class="btn btn-sm btn-default">Actualizar</button>
+    </form>
+    {% endif %}
+    <p style="margin-top:12px">{{ proyecto.descripcion|default:"Sin descripción" }}</p>
+  </div>
+
+  <div class="col-md-7">
+    <div class="x_panel" style="box-shadow:none;margin:0">
+      <div class="x_title">
+        <h2>Presupuesto en curso</h2>
+        <div class="clearfix"></div>
+      </div>
+
+      {% with p=ultimo_presupuesto_enviado %}
+      {% if p %}
+        <p>
+          <a href="{% url 'presupuestos:detail' p.pk %}"><strong>{{ p.titulo }}</strong></a>
+          <span class="label label-info">{{ p.get_estado_display }}</span>
+        </p>
+        <p><strong>Total:</strong> ${{ p.total_items|floatformat:0 }}</p>
+        <table class="table table-striped">
+          <thead><tr><th>Ítem</th><th>Cant.</th><th>Neto</th><th>Subtotal</th></tr></thead>
+          <tbody>
+          {% for item in p.items.all %}
+            <tr>
+              <td>{{ item.referencia|default:item.descripcion }}</td>
+              <td>{{ item.cantidad|unlocalize }}</td>
+              <td>${{ item.neto_unidad|floatformat:0 }}</td>
+              <td>${{ item.subtotal|floatformat:0 }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4">Sin ítems</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+        {% if is_cliente_view and p.estado == 'enviado' %}
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0">
+          <h4>Responder propuesta</h4>
+          <form method="post" action="{% url 'presupuestos:aceptar' p.pk %}" style="display:inline-block;margin-right:8px">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'proyectos:detail' proyecto.pk %}?tab=resumen">
+            <button class="btn btn-success" type="submit">Aceptar presupuesto</button>
+          </form>
+          <form method="post" action="{% url 'presupuestos:rechazar' p.pk %}" class="form-inline" style="display:inline-block;margin-top:8px">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'proyectos:detail' proyecto.pk %}?tab=resumen">
+            <input type="text" name="comentario" class="form-control" placeholder="Comentario al rechazar" style="min-width:220px" required>
+            <button class="btn btn-danger" type="submit">Rechazar</button>
+          </form>
+        </div>
+        {% elif not is_cliente_view %}
+          <p class="text-muted">Enviado al cliente — pendiente de aceptación.</p>
+          <a class="btn btn-default btn-sm" href="{% url 'presupuestos:detail' p.pk %}">Ver matriz / PDF</a>
+        {% endif %}
+
+      {% elif ultimo_presupuesto %}
+        <p>
+          <a href="{% url 'presupuestos:detail' ultimo_presupuesto.pk %}"><strong>{{ ultimo_presupuesto.titulo }}</strong></a>
+          <span class="label label-default">{{ ultimo_presupuesto.get_estado_display }}</span>
+        </p>
+        <p><strong>Total:</strong> ${{ ultimo_presupuesto.total_items|floatformat:0 }}</p>
+        {% if not is_cliente_view and ultimo_presupuesto.estado == 'borrador' %}
+          <form method="post" action="{% url 'presupuestos:enviar' ultimo_presupuesto.pk %}">{% csrf_token %}
+            <button class="btn btn-primary btn-sm" type="submit">Enviar a cliente</button>
+          </form>
+        {% endif %}
+        {% if is_cliente_view %}
+          <p class="text-muted">Aún no hay un presupuesto enviado para tu revisión.</p>
+        {% endif %}
+      {% else %}
+        <p class="nx-empty">Sin presupuestos en este proyecto.</p>
+      {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+</div>

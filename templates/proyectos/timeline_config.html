@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="x_panel">
+  <div class="x_title"><h2>{{ title }} — {{ proyecto.nombre }}</h2><div class="clearfix"></div></div>
+  <form method="post">{% csrf_token %}
+    {% for field in form %}
+      <div class="checkbox">
+        <label>{{ field }} {{ field.label }}</label>
+        {{ field.errors }}
+      </div>
+    {% endfor %}
+    <button class="btn btn-success" type="submit">Guardar</button>
+    <a class="btn btn-default" href="{% url 'proyectos:detail' proyecto.pk %}?tab=timeline">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

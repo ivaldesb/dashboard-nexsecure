@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Calendario{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Calendario</h3></div>
+  <div class="title_right">
+    <a class="btn btn-default" href="{% url 'calendario:tareas' %}">Tareas</a>
+    <a class="btn btn-primary" href="{% url 'calendario:create' %}" data-nx-modal data-nx-modal-title="Nuevo evento">Nuevo evento</a>
+  </div>
+</div>
+<div class="clearfix"></div>
+
+<div class="x_panel">
+  <div class="x_title"><h2>Capas</h2><div class="clearfix"></div></div>
+  <form method="post">{% csrf_token %}
+    {% for c in capas %}
+      <button class="btn btn-xs {% if c.visible %}btn-success{% else %}btn-default{% endif %}"
+              type="submit" name="toggle_capa" value="{{ c.pk }}"
+              title="{% if c.visible %}Ocultar{% else %}Mostrar{% endif %}">
+        <span style="display:inline-block;width:10px;height:10px;background:{{ c.color }};margin-right:4px;"></span>
+        {{ c.nombre }}{% if not c.visible %} (oculta){% endif %}
+      </button>
+    {% empty %}
+      <span class="text-muted">Sin capas</span>
+    {% endfor %}
+  </form>
+</div>
+
+<div class="x_panel">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Título</th><th>Tipo</th><th>Ubicación</th><th>Inicio</th><th>Fin</th>
+        <th>Capa</th><th>Proyecto</th><th>Asignados</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for e in eventos %}
+      <tr>
+        <td><a href="{% url 'calendario:detail' e.pk %}">{{ e.titulo }}</a></td>
+        <td>{{ e.get_tipo_display }}</td>
+        <td>{{ e.ubicacion|default:"—" }}</td>
+        <td>{{ e.inicio|date:"d/m/Y H:i" }}</td>
+        <td>{{ e.fin|date:"d/m/Y H:i" }}</td>
+        <td>{% if e.capa %}<span style="color:{{ e.capa.color }}">{{ e.capa.nombre }}</span>{% else %}—{% endif %}</td>
+        <td>{{ e.proyecto.nombre|default:"—" }}</td>
+        <td>{% for u in e.asignados.all %}{{ u.username }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
+        <td><a href="{% url 'calendario:edit' e.pk %}">Editar</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="9">Sin eventos</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

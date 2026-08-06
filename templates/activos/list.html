@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Activos{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Activos</h3></div>
+  <div class="title_right"><a class="btn btn-primary" href="{% url 'activos:create' %}" data-nx-modal data-nx-modal-title="Nuevo activo">Nuevo activo</a></div>
+</div>
+<div class="clearfix"></div>
+
+<div class="x_panel">
+  <div class="x_title"><h2>Monitor — incidencias abiertas</h2><div class="clearfix"></div></div>
+  <table class="table table-striped table-condensed">
+    <thead>
+      <tr><th>Título</th><th>Proyecto</th><th>Estado</th><th>Autor</th><th>Actualizado</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for i in monitor %}
+      <tr>
+        <td>{{ i.titulo }}</td>
+        <td>{{ i.proyecto.nombre }}</td>
+        <td>{{ i.get_estado_display }}</td>
+        <td>{{ i.autor.username|default:"—" }}</td>
+        <td>{{ i.updated_at|date:"d/m/Y H:i" }}</td>
+        <td><a href="{% url 'incidencias:detail' i.pk %}">Ver</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Sin incidencias abiertas en proyectos visibles</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="x_panel">
+  <div class="x_title"><h2>Inventario</h2><div class="clearfix"></div></div>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nombre</th><th>Categoría</th><th>Proyecto</th><th>S/N</th>
+        <th>Ubicación</th><th>IP</th><th>Técnico</th><th>Incidencias</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for a in activos %}
+      <tr>
+        <td>{{ a.nombre }}</td>
+        <td>{{ a.categoria.nombre|default:"—" }}</td>
+        <td>{{ a.proyecto.nombre }}</td>
+        <td>{{ a.sn|default:"—" }}</td>
+        <td>{{ a.ubicacion|default:"—" }}</td>
+        <td>{% if a.ip_dominio %}{{ a.ip_dominio }}{% elif a.ip %}{{ a.ip }}{% else %}—{% endif %}</td>
+        <td>{{ a.tecnico.username|default:"—" }}</td>
+        <td>{% if a.incidencias_activas is not None %}{{ a.incidencias_activas }}{% else %}—{% endif %}</td>
+        <td>
+          <a href="{% url 'activos:edit' a.pk %}" data-nx-modal data-nx-modal-title="Editar activo">Editar</a>
+          <form style="display:inline" method="post" action="{% url 'activos:delete' a.pk %}">{% csrf_token %}
+            <button class="btn btn-xs btn-danger" onclick="return confirm('¿Eliminar activo?')">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="9">Sin activos</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,30 +1,33 @@
 ---
-description: Alcance del repo — dashboard Flask NexSecure (no landing)
+description: Alcance del repo — CRM/dashboard Django NexSecure (no landing)
 alwaysApply: true
 ---
 
 # Dashboard NexSecure (alcance)
 
-Este repo es el **dashboard** NexSecure (Flask + Jinja templates + PyMySQL/MariaDB). **No** es la landing (esa está en `Proyectos/Web`).
+Este repo es el **CRM/dashboard** NexSecure (**Django** + templates Django + SQLite local / MariaDB opcional vía PyMySQL). **No** es la landing (esa está en `Proyectos/Web`).
 
 ## Estructura
 
-- Entry: `app.py`
-- Modelos / DB: `models.py`
-- UI: `templates/`, `static/`
+- Entry: `manage.py` (proyecto `config/`)
+- Apps: `accounts`, `clientes`, `proyectos`, `activos`, `documentos`, `incidencias`, `presupuestos`, `finanzas`, `calendario`, `marketing`, `core`
+- UI: `templates/` (base `templates/base.html`), `static/` (tema Gentelella)
+- Legacy Flask (solo referencia): `legacy/`
 - Config: `.env` vía `python-dotenv` — **no** commitear secretos ni tocar `.env` en commits
 
 ## Stack
 
-Flask, Flask-Login, PyMySQL, reportlab, Werkzeug, python-dotenv.
+Django 5.x, PyMySQL (si `DB_ENGINE=mysql`), reportlab, openpyxl, python-dotenv.
 
-No asumir Next.js, Vercel, React ni App Router.
+No asumir Next.js, Vercel, React ni Flask.
 
 ## Desarrollo local
 
 ```bash
-source .venv/bin/activate   # o venv del proyecto
-python app.py               # → http://127.0.0.1:5000
+.venv\Scripts\activate          # Windows (source .venv/bin/activate en unix)
+python manage.py migrate
+python manage.py runserver      # → http://127.0.0.1:8000
+python manage.py test core      # smoke test
 ```
 
 ## Skill del proyecto

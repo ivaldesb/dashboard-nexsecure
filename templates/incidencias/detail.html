@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ incidencia.titulo }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>{{ incidencia.titulo }}</h3></div>
+  <div class="title_right"><span class="label label-default">{{ incidencia.get_estado_display }}</span></div>
+</div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <p><strong>Proyecto:</strong> {{ incidencia.proyecto.nombre }}</p>
+  <p><strong>Autor:</strong> {{ incidencia.autor.username|default:"—" }}</p>
+  <p><strong>Técnico:</strong> {{ incidencia.tecnico.username|default:"—" }}</p>
+  <p><strong>Descripción:</strong></p>
+  <p>{{ incidencia.descripcion|linebreaksbr|default:"—" }}</p>
+  <p><strong>Diagnóstico:</strong></p>
+  <p>{{ incidencia.diagnostico|linebreaksbr|default:"—" }}</p>
+  <p><strong>Causas:</strong></p>
+  <p>{{ incidencia.causas|linebreaksbr|default:"—" }}</p>
+  <p><strong>Recomendaciones:</strong></p>
+  <p>{{ incidencia.recomendaciones|linebreaksbr|default:"—" }}</p>
+  <p><strong>Activos:</strong>
+    {% for a in incidencia.activos.all %}{{ a.nombre }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+  </p>
+  <p><small>Creada {{ incidencia.created_at|date:"d/m/Y H:i" }}</small></p>
+</div>
+
+<div class="x_panel">
+  <h4>Editar / activos / fotos</h4>
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <input type="hidden" name="update_incidencia" value="1">
+    {% for field in form %}
+      <div class="form-group">
+        <label>{{ field.label }}</label>
+        {{ field.errors }}
+        {{ field }}
+      </div>
+    {% endfor %}
+    <div class="form-group">
+      <label>Añadir fotos</label>
+      <input type="file" name="fotos" class="form-control" accept="image/*" multiple>
+    </div>
+    <button class="btn btn-success" type="submit">Guardar cambios</button>
+  </form>
+</div>
+
+<div class="x_panel">
+  <h4>Fotos</h4>
+  <div class="row">
+    {% for f in incidencia.fotos.all %}
+      <div class="col-md-3" style="margin-bottom:12px;">
+        <a href="{{ f.imagen.url }}" target="_blank" rel="noopener">
+          <img src="{{ f.imagen.url }}" alt="Foto" style="max-width:100%;max-height:160px;">
+        </a>
+        <small class="text-muted d-block">{{ f.uploaded_by.username|default:"—" }} · {{ f.created_at|date:"d/m/Y H:i" }}</small>
+      </div>
+    {% empty %}
+      <div class="col-md-12"><p>Sin fotos.</p></div>
+    {% endfor %}
+  </div>
+  <form method="post" action="{% url 'incidencias:add_foto' incidencia.pk %}" enctype="multipart/form-data" style="margin-top:12px;">{% csrf_token %}
+    {{ foto_form.imagen }}
+    <button class="btn btn-default" type="submit" style="margin-top:8px;">Subir foto</button>
+  </form>
+</div>
+
+<div class="x_panel">
+  <h4>Cambiar estado</h4>
+  <form method="post" action="{% url 'incidencias:update_estado' incidencia.pk %}">{% csrf_token %}
+    <select name="estado" class="form-control" style="max-width:240px;display:inline-block;">
+      {% for val, label in estados %}
+        <option value="{{ val }}" {% if incidencia.estado == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-primary" type="submit">Actualizar</button>
+  </form>
+</div>
+<div class="x_panel">
+  <h4>Comentarios</h4>
+  {% for c in incidencia.comentarios.all %}
+    <div style="border-bottom:1px solid #eee;padding:8px 0;">
+      <strong>{{ c.autor.username|default:"—" }}</strong>
+      <small>{{ c.created_at|date:"d/m/Y H:i" }}</small>
+      <p>{{ c.texto|linebreaksbr }}</p>
+    </div>
+  {% empty %}
+    <p>Sin comentarios.</p>
+  {% endfor %}
+  <form method="post" action="{% url 'incidencias:add_comentario' incidencia.pk %}" style="margin-top:12px;">{% csrf_token %}
+    <textarea name="texto" class="form-control" rows="3" placeholder="Escribe un comentario…"></textarea>
+    <button class="btn btn-success" type="submit" style="margin-top:8px;">Comentar</button>
+  </form>
+</div>
+<a class="btn btn-default" href="{% url 'incidencias:list' %}">Volver al listado</a>
+{% endblock %}

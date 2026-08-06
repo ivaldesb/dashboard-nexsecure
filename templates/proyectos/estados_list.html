@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Estados de proyecto{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Estados de proyecto</h3></div>
+  <div class="title_right"><a class="btn btn-primary" href="{% url 'proyectos:estado_create' %}" data-nx-modal data-nx-modal-title="Nuevo estado">Nuevo estado</a></div>
+</div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <table class="table table-striped">
+    <thead><tr><th>Orden</th><th>Nombre</th><th>Slug</th><th>Color</th><th>Activo</th><th>Visible cliente</th><th></th></tr></thead>
+    <tbody>
+    {% for e in estados %}
+      <tr>
+        <td>{{ e.orden }}</td>
+        <td>{{ e.nombre }}</td>
+        <td>{{ e.slug }}</td>
+        <td><span class="label" style="background-color:{{ e.color }}">{{ e.color }}</span></td>
+        <td>{{ e.activo|yesno:"Sí,No" }}</td>
+        <td>{{ e.visible_cliente|yesno:"Sí,No" }}</td>
+        <td><a href="{% url 'proyectos:estado_edit' e.pk %}">Editar</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">Sin estados</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

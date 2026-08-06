@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Finanzas{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Finanzas</h3></div>
+</div>
+<div class="clearfix"></div>
+<div class="row">
+  <div class="col-md-4 col-sm-4 col-xs-12">
+    <div class="x_panel"><div class="x_content"><h4>Ingresos (abonos)</h4><h2>${{ ingresos }}</h2></div></div>
+  </div>
+  <div class="col-md-4 col-sm-4 col-xs-12">
+    <div class="x_panel"><div class="x_content"><h4>Egresos (cargos)</h4><h2>${{ egresos }}</h2></div></div>
+  </div>
+  <div class="col-md-4 col-sm-4 col-xs-12">
+    <div class="x_panel"><div class="x_content"><h4>Balance</h4><h2>${{ balance }}</h2></div></div>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-4">
+    <div class="x_panel">
+      <h4>Accesos</h4>
+      <ul class="list-unstyled">
+        <li><a href="{% url 'finanzas:periodos_list' %}">Períodos tributarios</a></li>
+        <li><a href="{% url 'finanzas:sii_list' %}">Documentos SII</a></li>
+        <li><a href="{% url 'finanzas:movimientos_list' %}">Movimientos de cuenta</a></li>
+        <li><a href="{% url 'finanzas:movimientos_import' %}" data-nx-modal data-nx-modal-title="Importar movimientos">Importar movimientos</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="x_panel">
+      <h4>Movimientos recientes</h4>
+      <table class="table table-striped">
+        <thead>
+          <tr><th>Fecha</th><th>Cuenta</th><th>Tipo</th><th>Monto</th><th>Factura</th></tr>
+        </thead>
+        <tbody>
+        {% for m in movimientos_recientes %}
+          <tr>
+            <td>{{ m.fecha|date:"d/m/Y" }}</td>
+            <td>{% if m.cuenta_bancaria %}{{ m.cuenta_bancaria.nombre }}{% else %}{{ m.cuenta }}{% endif %}</td>
+            <td>{{ m.get_tipo_display }}</td>
+            <td>${{ m.monto }}</td>
+            <td>{% if m.factura %}{{ m.factura }}{% else %}—{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">Sin movimientos</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="x_panel">
+      <h4>Últimos períodos</h4>
+      <table class="table table-striped">
+        <thead>
+          <tr><th>Período</th><th>Neto</th><th>IVA débito</th><th>IVA a pagar</th><th>PPM</th></tr>
+        </thead>
+        <tbody>
+        {% for p in periodos %}
+          <tr>
+            <td>{{ p.periodo|date:"Y-m" }}</td>
+            <td>${{ p.total_neto }}</td>
+            <td>${{ p.iva_debito }}</td>
+            <td>${{ p.iva_a_pagar }}</td>
+            <td>${{ p.ppm }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">Sin períodos calculados. <a href="{% url 'finanzas:periodos_list' %}">Recalcular</a></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

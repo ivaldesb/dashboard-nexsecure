@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="x_panel">
+  <div class="x_title"><h2>{{ title }}</h2><div class="clearfix"></div></div>
+  <form method="post">{% csrf_token %}
+    {% for field in form %}
+      <div class="form-group">
+        <label>{{ field.label }}</label>
+        {{ field.errors }}
+        {{ field }}
+      </div>
+    {% endfor %}
+    <button class="btn btn-success" type="submit">Guardar</button>
+    <a class="btn btn-default" href="{% if proyecto %}{% url 'proyectos:detail' proyecto.pk %}{% else %}{% url 'proyectos:list' %}{% endif %}">Cancelar</a>
+  </form>
+  {% if proyecto and can_delete %}
+  <form method="post" action="{% url 'proyectos:delete' proyecto.pk %}" onsubmit="return confirm('¿Eliminar proyecto?');" style="margin-top:10px;">{% csrf_token %}
+    <button class="btn btn-danger" type="submit">Eliminar</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

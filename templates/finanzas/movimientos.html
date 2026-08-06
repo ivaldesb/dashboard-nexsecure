@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Movimientos{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Movimientos de cuenta</h3></div>
+  <div class="title_right">
+    <a class="btn btn-primary" href="{% url 'finanzas:movimiento_create' %}" data-nx-modal data-nx-modal-title="Nuevo movimiento">Nuevo</a>
+    <a class="btn btn-default" href="{% url 'finanzas:movimientos_import' %}" data-nx-modal data-nx-modal-title="Importar movimientos">Importar</a>
+    <a class="btn btn-default" href="{% url 'finanzas:dashboard' %}">Volver</a>
+  </div>
+</div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <table class="table table-striped">
+    <thead>
+      <tr><th>Fecha</th><th>Cuenta</th><th>Tipo</th><th>Monto</th><th>Factura</th><th>Descripción</th><th>Referencia</th></tr>
+    </thead>
+    <tbody>
+    {% for m in movimientos %}
+      <tr>
+        <td>{{ m.fecha|date:"d/m/Y" }}</td>
+        <td>{% if m.cuenta_bancaria %}{{ m.cuenta_bancaria.nombre }}{% else %}{{ m.cuenta }}{% endif %}</td>
+        <td>{{ m.get_tipo_display }}</td>
+        <td>${{ m.monto }}</td>
+        <td>{% if m.factura %}{{ m.factura }}{% else %}—{% endif %}</td>
+        <td>{{ m.descripcion|default:"—" }}</td>
+        <td>{{ m.referencia|default:"—" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">Sin movimientos</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

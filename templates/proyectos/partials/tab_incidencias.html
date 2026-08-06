@@ -1,0 +1,14 @@
+<p><a class="btn btn-primary btn-sm" href="{% url 'incidencias:create' proyecto.pk %}" data-nx-modal data-nx-modal-title="Nueva incidencia">Nueva incidencia</a></p>
+<table class="table table-striped">
+  <thead><tr><th>Título</th><th>Estado</th><th>Autor</th><th></th></tr></thead>
+  <tbody>
+  {% for i in incidencias %}
+    <tr>
+      <td>{{ i.titulo }}</td>
+      <td>{{ i.estado }}</td>
+      <td>{{ i.autor }}</td>
+      <td><a href="{% url 'incidencias:detail' i.pk %}">Ver</a></td>
+    </tr>
+  {% empty %}<tr><td colspan="4">Sin incidencias</td></tr>{% endfor %}
+  </tbody>
+</table>

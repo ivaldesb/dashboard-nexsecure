@@ -1,0 +1,32 @@
+<span data-nx-modal-title class="hidden">{{ title }}</span>
+<form method="post" action="{{ action_url }}" {% if multipart %}enctype="multipart/form-data"{% endif %} data-nx-modal-form>
+  {% csrf_token %}
+  <input type="hidden" name="modal" value="1">
+  {% if extra_hidden %}
+    {% for k, v in extra_hidden.items %}
+      <input type="hidden" name="{{ k }}" value="{{ v }}">
+    {% endfor %}
+  {% endif %}
+
+  {% if form_body_template %}
+    {% include form_body_template %}
+  {% else %}
+    {% for field in form %}
+      <div class="form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field.errors }}
+        {{ field }}
+        {% if field.help_text %}<p class="help-block">{{ field.help_text }}</p>{% endif %}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="nx-modal-actions">
+    {% if modal %}
+      <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+    {% else %}
+      <a class="btn btn-default" href="{{ cancel_url|default:'/' }}">Cancelar</a>
+    {% endif %}
+    <button class="btn btn-primary" type="submit">Guardar</button>
+  </div>
+</form>
