@@ -1,91 +1,296 @@
 {% load l10n %}
-<div class="row">
-  <div class="col-md-5">
-    <h4>Clientes</h4>
-    <ul>{% for c in proyecto.clientes.all %}<li>{{ c.display_name }}</li>{% empty %}<li>—</li>{% endfor %}</ul>
-    <h4>Equipo</h4>
-    <ul>{% for u in proyecto.equipo.all %}<li>{{ u.username }}{% if u.tag %} ({{ u.tag }}){% endif %}</li>{% empty %}<li>—</li>{% endfor %}</ul>
-    <p><strong>Estado:</strong> {{ proyecto.estado.nombre }}</p>
-    {% if not is_cliente_view %}
-    <form method="post" action="{% url 'proyectos:change_estado' proyecto.pk %}" class="form-inline">
-      {% csrf_token %}
-      <select name="estado" class="form-control">
-        {% for e in estados %}<option value="{{ e.pk }}" {% if e.pk == proyecto.estado_id %}selected{% endif %}>{{ e.nombre }}</option>{% endfor %}
-      </select>
-      <button class="btn btn-sm btn-default">Actualizar</button>
-    </form>
-    {% endif %}
-    <p style="margin-top:12px">{{ proyecto.descripcion|default:"Sin descripción" }}</p>
-  </div>
-
-  <div class="col-md-7">
-    <div class="x_panel" style="box-shadow:none;margin:0">
+{% url 'proyectos:detail' proyecto.pk as proyecto_detail_url %}
+{# Layout cotización 8/4 — estética NexSecure #}
+<div class="row nx-cotizacion">
+  <div class="col-md-8">
+    <div class="x_panel nx-coti-panel">
       <div class="x_title">
-        <h2>Presupuesto en curso</h2>
+        <h2>{{ proyecto.nombre }} — Presupuesto</h2>
         <div class="clearfix"></div>
       </div>
+      <div class="x_content">
+        {% if ppto_vista %}
+        <div class="row nx-coti-header">
+          <div class="col-md-7">
+            <h3 class="nx-coti-num">Cotización N° {{ ppto_vista.numero|default:ppto_vista.pk }}</h3>
+            <p><strong>Fecha:</strong> {{ ppto_vista.created_at|date:"Y-m-d" }}</p>
+            <p>
+              <span class="label label-default">{{ ppto_vista.get_estado_display }}</span>
+              {% if ppto_vista.tipo == 'adicional' %}<span class="label label-info">Adicional</span>{% endif %}
+            </p>
+          </div>
+          <div class="col-md-5 text-right">
+            {% if not is_cliente_view %}
+            <a class="btn btn-primary btn-sm" href="{% url 'proyectos:edit' proyecto.pk %}" data-nx-modal data-nx-modal-title="Editar proyecto">
+              <i class="fa fa-user"></i> Clientes / equipo
+            </a>
+            {% if is_admin %}
+            <a class="btn btn-default btn-sm" href="{% url 'presupuestos:detail' ppto_vista.pk %}">
+              <i class="fa fa-cog"></i> Matriz / gestión
+            </a>
+            {% endif %}
+            {% endif %}
+          </div>
+        </div>
 
-      {% with p=ultimo_presupuesto_enviado %}
-      {% if p %}
-        <p>
-          <a href="{% url 'presupuestos:detail' p.pk %}"><strong>{{ p.titulo }}</strong></a>
-          <span class="label label-info">{{ p.get_estado_display }}</span>
-        </p>
-        <p><strong>Total:</strong> ${{ p.total_items|floatformat:0 }}</p>
-        <table class="table table-striped">
-          <thead><tr><th>Ítem</th><th>Cant.</th><th>Neto</th><th>Subtotal</th></tr></thead>
-          <tbody>
-          {% for item in p.items.all %}
-            <tr>
-              <td>{{ item.referencia|default:item.descripcion }}</td>
-              <td>{{ item.cantidad|unlocalize }}</td>
-              <td>${{ item.neto_unidad|floatformat:0 }}</td>
-              <td>${{ item.subtotal|floatformat:0 }}</td>
-            </tr>
-          {% empty %}
-            <tr><td colspan="4">Sin ítems</td></tr>
-          {% endfor %}
-          </tbody>
-        </table>
+        <div class="form-group">
+          <label><strong>Obra:</strong></label>
+          <input type="text" class="form-control" value="{{ proyecto.nombre }}" readonly>
+        </div>
 
-        {% if is_cliente_view and p.estado == 'enviado' %}
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0">
+        <h4 class="nx-section-title">Datos del Cliente</h4>
+        {% with c=cliente_principal %}
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label><strong>Cliente:</strong></label>
+              <input type="text" class="form-control" value="{% if c %}{{ c.display_name }}{% else %}—{% endif %}" readonly>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label><strong>RUT Cliente:</strong></label>
+              <input type="text" class="form-control" value="{% if c and c.rut %}{{ c.rut }}{% else %}—{% endif %}" readonly>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label><strong>E-mail:</strong></label>
+              <input type="email" class="form-control" value="{% if c and c.email %}{{ c.email }}{% else %}—{% endif %}" readonly>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label><strong>Teléfono:</strong></label>
+              <input type="text" class="form-control" value="{% if c and c.telefono %}{{ c.telefono }}{% else %}—{% endif %}" readonly>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label><strong>Giro:</strong></label>
+              <input type="text" class="form-control" value="{% if c and c.giro %}{{ c.giro }}{% else %}—{% endif %}" readonly>
+            </div>
+          </div>
+        </div>
+        {% endwith %}
+
+        <h4 class="nx-section-title">Items del Presupuesto</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered nx-coti-table">
+            <thead>
+              <tr>
+                <th>Ref.</th>
+                <th>Cantidad</th>
+                <th>Ubicación</th>
+                <th>Tipología</th>
+                <th>Tipo</th>
+                <th>Características</th>
+                <th>Valor Unitario</th>
+                <th>Importe Total</th>
+                {% if not is_cliente_view %}<th>Acciones</th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in ppto_vista.items.all %}
+              <tr>
+                <td>{{ item.referencia|default:item.descripcion }}</td>
+                <td>{{ item.cantidad|unlocalize }}</td>
+                <td>{{ item.ubicacion|default:"" }}</td>
+                <td>{{ item.tipologia|default:"" }}</td>
+                <td>{{ item.get_tipo_display }}</td>
+                <td>{{ item.caracteristicas|default:item.descripcion }}</td>
+                <td class="text-right">${{ item.neto_unidad|floatformat:0 }}</td>
+                <td class="text-right">${{ item.subtotal|floatformat:0 }}</td>
+                {% if not is_cliente_view %}
+                <td class="nx-coti-actions">
+                  <a class="btn btn-xs btn-info" href="{% url 'presupuestos:item_edit' item.pk %}?next={{ proyecto_detail_url|add:'?tab=resumen'|urlencode }}" data-nx-modal data-nx-modal-title="Editar ítem"><i class="fa fa-pencil"></i></a>
+                  <form method="post" action="{% url 'presupuestos:item_delete' item.pk %}" style="display:inline" onsubmit="return confirm('¿Eliminar ítem?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ proyecto_detail_url }}?tab=resumen">
+                    <button type="submit" class="btn btn-xs btn-danger"><i class="fa fa-trash"></i></button>
+                  </form>
+                </td>
+                {% endif %}
+              </tr>
+              {% empty %}
+              <tr><td colspan="{% if is_cliente_view %}8{% else %}9{% endif %}" class="text-center text-muted">Sin ítems</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if not is_cliente_view %}
+        <a class="btn btn-success btn-sm" href="{% url 'presupuestos:item_add' ppto_vista.pk %}?next={{ proyecto_detail_url|add:'?tab=resumen'|urlencode }}" data-nx-modal data-nx-modal-title="Agregar ítem">
+          <i class="fa fa-plus"></i> Agregar Ítem
+        </a>
+        {% endif %}
+
+        <h4 class="nx-section-title" style="margin-top:24px">GENERALIDADES</h4>
+        {% if is_cliente_view %}
+        <textarea class="form-control" rows="6" readonly>{{ proyecto.generalidades|default:ppto_vista.generalidades }}</textarea>
+        {% else %}
+        <form method="post" action="{% url 'proyectos:save_generalidades' proyecto.pk %}">
+          {% csrf_token %}
+          {% if ppto_vista %}<input type="hidden" name="presupuesto_id" value="{{ ppto_vista.pk }}">{% endif %}
+          <textarea class="form-control" name="generalidades" rows="6" required>{{ proyecto.generalidades }}</textarea>
+          <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px">
+            <i class="fa fa-save"></i> Guardar generalidades
+          </button>
+        </form>
+        {% endif %}
+
+        {% if is_cliente_view and ppto_vista.estado == 'enviado' %}
+        <div class="nx-coti-actions-bar">
           <h4>Responder propuesta</h4>
-          <form method="post" action="{% url 'presupuestos:aceptar' p.pk %}" style="display:inline-block;margin-right:8px">
+          <form method="post" action="{% url 'presupuestos:aceptar' ppto_vista.pk %}" style="display:inline-block;margin-right:8px">
             {% csrf_token %}
             <input type="hidden" name="next" value="{% url 'proyectos:detail' proyecto.pk %}?tab=resumen">
             <button class="btn btn-success" type="submit">Aceptar presupuesto</button>
           </form>
-          <form method="post" action="{% url 'presupuestos:rechazar' p.pk %}" class="form-inline" style="display:inline-block;margin-top:8px">
+          <form method="post" action="{% url 'presupuestos:rechazar' ppto_vista.pk %}" class="form-inline" style="display:inline-block;margin-top:8px">
             {% csrf_token %}
             <input type="hidden" name="next" value="{% url 'proyectos:detail' proyecto.pk %}?tab=resumen">
             <input type="text" name="comentario" class="form-control" placeholder="Comentario al rechazar" style="min-width:220px" required>
             <button class="btn btn-danger" type="submit">Rechazar</button>
           </form>
         </div>
-        {% elif not is_cliente_view %}
-          <p class="text-muted">Enviado al cliente — pendiente de aceptación.</p>
-          <a class="btn btn-default btn-sm" href="{% url 'presupuestos:detail' p.pk %}">Ver matriz / PDF</a>
-        {% endif %}
-
-      {% elif ultimo_presupuesto %}
-        <p>
-          <a href="{% url 'presupuestos:detail' ultimo_presupuesto.pk %}"><strong>{{ ultimo_presupuesto.titulo }}</strong></a>
-          <span class="label label-default">{{ ultimo_presupuesto.get_estado_display }}</span>
-        </p>
-        <p><strong>Total:</strong> ${{ ultimo_presupuesto.total_items|floatformat:0 }}</p>
-        {% if not is_cliente_view and ultimo_presupuesto.estado == 'borrador' %}
-          <form method="post" action="{% url 'presupuestos:enviar' ultimo_presupuesto.pk %}">{% csrf_token %}
+        {% elif not is_cliente_view and ppto_vista.estado == 'borrador' %}
+        <div class="nx-coti-actions-bar">
+          <form method="post" action="{% url 'presupuestos:enviar' ppto_vista.pk %}">{% csrf_token %}
             <button class="btn btn-primary btn-sm" type="submit">Enviar a cliente</button>
           </form>
+        </div>
         {% endif %}
-        {% if is_cliente_view %}
-          <p class="text-muted">Aún no hay un presupuesto enviado para tu revisión.</p>
+
+        {% else %}
+          <p class="nx-empty">
+            {% if is_cliente_view %}
+              Aún no hay un presupuesto enviado para tu revisión.
+            {% else %}
+              Sin presupuestos en este proyecto.
+            {% endif %}
+          </p>
+          {% if not is_cliente_view and ultimo_presupuesto %}
+            <a class="btn btn-primary btn-sm" href="{% url 'presupuestos:detail' ultimo_presupuesto.pk %}">Abrir presupuesto</a>
+          {% endif %}
         {% endif %}
-      {% else %}
-        <p class="nx-empty">Sin presupuestos en este proyecto.</p>
-      {% endif %}
-      {% endwith %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="x_panel nx-coti-panel">
+      <div class="x_title">
+        <h2>Descripción del Proyecto</h2>
+        <div class="clearfix"></div>
+      </div>
+      <div class="x_content">
+        <h3 class="nx-coti-obra"><i class="fa fa-folder-open"></i> {{ proyecto.nombre }}</h3>
+        <p>{{ proyecto.descripcion|default:"Sin descripción"|linebreaksbr }}</p>
+
+        <p class="nx-side-label">Equipo Asignado</p>
+        <ul class="list-unstyled nx-equipo-list">
+          {% for u in proyecto.equipo.all %}
+          <li>
+            <i class="fa fa-user"></i>
+            <strong>{{ u.get_full_name|default:u.username }}</strong>
+            {% if u.email %}<br><small class="text-muted">{{ u.email }}</small>{% endif %}
+            {% if u.tag %}<br><span class="nx-tag">{{ u.tag }}</span>{% endif %}
+          </li>
+          {% empty %}
+          <li class="text-muted">Sin equipo</li>
+          {% endfor %}
+        </ul>
+
+        <p class="nx-side-label">Estado</p>
+        <p><span class="nx-estado-badge" style="background:{{ proyecto.estado.color|default:'#0f766e' }}">{{ proyecto.estado.nombre }}</span></p>
+        {% if not is_cliente_view %}
+        <form method="post" action="{% url 'proyectos:change_estado' proyecto.pk %}" class="form-inline" style="margin-bottom:12px">
+          {% csrf_token %}
+          <select name="estado" class="form-control input-sm">
+            {% for e in estados %}<option value="{{ e.pk }}" {% if e.pk == proyecto.estado_id %}selected{% endif %}>{{ e.nombre }}</option>{% endfor %}
+          </select>
+          <button class="btn btn-sm btn-default">Actualizar</button>
+        </form>
+        {% endif %}
+
+        <p class="nx-side-label">Progreso</p>
+        <div class="progress nx-progress">
+          <div class="progress-bar" role="progressbar" style="width: {{ proyecto.progreso }}%;" aria-valuenow="{{ proyecto.progreso }}" aria-valuemin="0" aria-valuemax="100">
+            {{ proyecto.progreso }}%
+          </div>
+        </div>
+
+        <p class="nx-side-label">Fecha de Creación</p>
+        <p>{{ proyecto.created_at|date:"Y-m-d" }}</p>
+
+        <p class="nx-side-label">Cambios Recientes</p>
+        {% for ev in timeline_recientes %}
+          <p class="nx-change-item"><strong>{{ ev.titulo }}</strong><br><small class="text-muted">{{ ev.created_at|date:"Y-m-d H:i" }}</small></p>
+        {% empty %}
+          <p class="text-muted" style="font-size:12px">No hay cambios registrados</p>
+        {% endfor %}
+
+        {% if cotizacion %}
+        <p class="nx-side-label">Totales</p>
+        <table class="table table-bordered nx-totales">
+          <tr>
+            <th>SUB NETO</th>
+            <td class="text-right">${{ cotizacion.sub_neto|floatformat:0 }}</td>
+          </tr>
+          <tr>
+            <th>{{ cotizacion.descuento_pct|floatformat:0 }}% DESCUENTO</th>
+            <td class="text-right">${{ cotizacion.descuento|floatformat:0 }}</td>
+          </tr>
+          <tr>
+            <th>NETO</th>
+            <td class="text-right"><strong>${{ cotizacion.neto|floatformat:0 }}</strong></td>
+          </tr>
+          <tr>
+            <th>{{ cotizacion.iva_pct|floatformat:0 }}% IVA</th>
+            <td class="text-right">${{ cotizacion.iva|floatformat:0 }}</td>
+          </tr>
+          <tr class="nx-totales-total">
+            <th>TOTAL</th>
+            <td class="text-right"><strong>${{ cotizacion.total|floatformat:0 }}</strong></td>
+          </tr>
+        </table>
+        {% endif %}
+
+        {% if is_admin and resumen_ppto %}
+        <p class="nx-side-label"><i class="fa fa-users"></i> Pagos a Empleados</p>
+        {% for p in resumen_ppto.pagos %}
+        <div class="nx-pago-card" style="margin-bottom:12px;min-height:0">
+          <h5 style="font-size:14px"><i class="fa fa-user"></i> {{ p.empleado_nombre }}</h5>
+          <p>% Pago: {{ p.porcentaje_pago|floatformat:1 }}%</p>
+          <p>Por utilidad: ${{ p.pago_por_utilidad|floatformat:0 }}</p>
+          <p class="nx-pago-plus">+ Gastos: ${{ p.gastos_pagados|floatformat:0 }}</p>
+          <p><strong>PAGO TOTAL: ${{ p.pago_total|floatformat:0 }}</strong></p>
+        </div>
+        {% empty %}
+        <p class="text-muted small">Sin pagos a empleados configurados.</p>
+        {% endfor %}
+
+        <div class="nx-resumen-card">
+          <h5><i class="fa fa-calculator"></i> Resumen General</h5>
+          <div class="nx-resumen-inner">
+            <p>Total Items <span>${{ resumen_ppto.sub_neto|floatformat:0 }}</span></p>
+            <p>Total Pagos Empleados <span>${{ resumen_ppto.total_pagos_empleados|floatformat:0 }}</span></p>
+            <p class="nx-diff">DIFERENCIA <span>${{ resumen_ppto.recibe_empresa|floatformat:0 }}</span></p>
+          </div>
+          {% if ppto_vista %}
+          <div class="text-right" style="margin-top:12px">
+            <a href="{% url 'presupuestos:detail' ppto_vista.pk %}" class="btn btn-default btn-sm">
+              <i class="fa fa-cog"></i> Gestionar Presupuesto Completo
+            </a>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>

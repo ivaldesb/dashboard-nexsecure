@@ -33,7 +33,42 @@ def _fc(form):
 class ProyectoForm(ModelForm):
     class Meta:
         model = Proyecto
-        fields = ['codigo', 'nombre', 'descripcion', 'estado', 'equipo', 'clientes']
+        # generalidades se editan en el detalle del proyecto (default en el modelo)
+        fields = ['codigo', 'nombre', 'descripcion', 'progreso', 'estado', 'equipo', 'clientes']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['progreso'].required = False
+        self.fields['progreso'].initial = self.fields['progreso'].initial or 0
+        for name, placeholder in (
+            ('equipo', 'Buscar usuario para añadir…'),
+            ('clientes', 'Buscar cliente para añadir…'),
+        ):
+            f = self.fields[name]
+            f.required = False
+            f.help_text = 'Arriba: disponibles (buscar y añadir). Abajo: asignados (X para quitar).'
+            f.widget.attrs.update({
+                'class': 'nx-m2m-picker',
+                'data-placeholder': placeholder,
+                'multiple': 'multiple',
+            })
+            # fuerza <select multiple> aunque el widget base ya lo sea
+            f.widget.allow_multiple_selected = True
+        self.fields['equipo'].label_from_instance = lambda u: (
+            f'{(u.get_full_name() or "").strip() or u.username}'
+            + (f' — {u.email}' if u.email else '')
+        )
+        self.fields['clientes'].label_from_instance = lambda c: (
+            f'{c.display_name}'
+            + (f' — {c.rut}' if c.rut else '')
+            + (f' · {c.email}' if c.email else '')
+        )
+        self.fields['equipo'].queryset = self.fields['equipo'].queryset.order_by(
+            'first_name', 'last_name', 'username'
+        )
+        self.fields['clientes'].queryset = self.fields['clientes'].queryset.order_by(
+            'nombre_empresa', 'apellido', 'nombre'
+        )
 
 
 class EstadoProyectoForm(ModelForm):
@@ -104,6 +139,7 @@ def create(request):
             proyecto=proyecto,
             tipo=Presupuesto.INICIAL,
             titulo=f'Presupuesto inicial — {proyecto.nombre}',
+            generalidades=proyecto.generalidades or '',
             creado_por=request.user,
         )
         TimelineEvent.objects.create(
@@ -152,12 +188,16 @@ def delete(request, pk):
 
 
 def detail(request, pk):
+    from django.conf import settings as dj_settings
+    from decimal import Decimal
+
     proyecto = _get_proyecto_or_403(request, pk)
     tab = request.GET.get('tab', 'resumen')
     if tab not in TABS:
         tab = 'resumen'
 
     is_cliente = _is_cliente_viewer(request.user)
+    is_admin = request.user.is_system_admin()
     ultimo_enviado = (
         proyecto.presupuestos.filter(estado=Presupuesto.ENVIADO)
         .prefetch_related('items')
@@ -167,6 +207,15 @@ def detail(request, pk):
     ultimo_ppto = (
         proyecto.presupuestos.prefetch_related('items').order_by('-updated_at', '-pk').first()
     )
+    # Vista cotización: enviado al cliente si hay; si no, el último (staff)
+    ppto_vista = ultimo_enviado or (None if is_cliente else ultimo_ppto)
+    cotizacion = ppto_vista.totales_cotizacion() if ppto_vista else None
+    cliente_principal = proyecto.clientes.first()
+    gastos_total = sum((g.monto for g in proyecto.gastos.all()), Decimal('0'))
+    if ppto_vista:
+        margen = (cotizacion['neto'] if cotizacion else Decimal('0')) - gastos_total
+    else:
+        margen = Decimal('0') - gastos_total
 
     ctx = {
         'proyecto': proyecto,
@@ -176,9 +225,21 @@ def detail(request, pk):
         'comentarios': proyecto.comentarios.select_related('autor').all(),
         'comentario_form_url': reverse('proyectos:add_comentario', args=[proyecto.pk]),
         'is_cliente_view': is_cliente,
+        'is_admin': is_admin,
         'ultimo_presupuesto_enviado': ultimo_enviado,
         'ultimo_presupuesto': ultimo_ppto,
+        'ppto_vista': ppto_vista,
+        'cotizacion': cotizacion,
+        'cliente_principal': cliente_principal,
+        'iva_rate_pct': int(float(getattr(dj_settings, 'FINANZAS_IVA_RATE', 0.19)) * 100),
+        'gastos_total': gastos_total,
+        'margen_estimado': margen,
+        'timeline_recientes': proyecto.timeline.select_related('actor').all()[:5],
     }
+    if is_admin and ppto_vista:
+        from presupuestos.finance import resumen_financiero
+
+        ctx['resumen_ppto'] = resumen_financiero(ppto_vista)
     if _can_config_timeline(request.user, proyecto):
         ctx['timeline_config_url'] = reverse('proyectos:timeline_config', args=[proyecto.pk])
 
@@ -242,6 +303,29 @@ def add_comentario(request, pk):
         ComentarioProyecto.objects.create(proyecto=proyecto, autor=request.user, texto=texto)
         messages.success(request, 'Comentario añadido.')
     return redirect(request.POST.get('next') or reverse('proyectos:detail', args=[pk]))
+
+
+@require_POST
+def save_generalidades(request, pk):
+    proyecto = _get_proyecto_or_403(request, pk)
+    if _is_cliente_viewer(request.user):
+        raise PermissionDenied
+    from proyectos.models import GENERALIDADES_DEFAULT
+
+    texto = request.POST.get('generalidades')
+    if texto is None:
+        texto = ''
+    texto = texto.strip() or GENERALIDADES_DEFAULT
+    proyecto.generalidades = texto
+    proyecto.save(update_fields=['generalidades', 'updated_at'])
+    # ponytail: sincroniza al presupuesto en vista (si hay)
+    ppto_id = request.POST.get('presupuesto_id')
+    if ppto_id:
+        Presupuesto.objects.filter(pk=ppto_id, proyecto=proyecto).update(generalidades=texto)
+    else:
+        Presupuesto.objects.filter(proyecto=proyecto, tipo=Presupuesto.INICIAL).update(generalidades=texto)
+    messages.success(request, 'Generalidades actualizadas.')
+    return redirect(reverse('proyectos:detail', args=[pk]) + '?tab=resumen')
 
 
 @require_http_methods(['GET', 'POST'])

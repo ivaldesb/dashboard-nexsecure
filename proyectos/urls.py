@@ -15,6 +15,7 @@ urlpatterns = [
     path('<int:pk>/eliminar/', views.delete, name='delete'),
     path('<int:pk>/estado/', views.change_estado, name='change_estado'),
     path('<int:pk>/comentario/', views.add_comentario, name='add_comentario'),
+    path('<int:pk>/generalidades/', views.save_generalidades, name='save_generalidades'),
     path('<int:pk>/timeline-config/', views.timeline_config, name='timeline_config'),
     path('<int:pk>/pdf/', views.pdf_reporte, name='pdf_reporte'),
 ]

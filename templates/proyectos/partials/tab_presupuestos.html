@@ -1,15 +1,16 @@
 <p><a class="btn btn-primary btn-sm" href="{% url 'presupuestos:create_adicional' proyecto.pk %}" data-nx-modal data-nx-modal-title="Presupuesto adicional">Presupuesto adicional</a></p>
 <table class="table table-striped">
-  <thead><tr><th>Título</th><th>Tipo</th><th>Estado</th><th>Total</th><th></th></tr></thead>
+  <thead><tr><th>Nº</th><th>Título</th><th>Tipo</th><th>Estado</th><th>Total</th><th></th></tr></thead>
   <tbody>
   {% for p in presupuestos %}
     <tr>
+      <td>{{ p.numero|default:p.pk }}</td>
       <td>{{ p.titulo }}</td>
       <td>{{ p.get_tipo_display }}</td>
       <td>{{ p.get_estado_display }}</td>
       <td>${{ p.total_items|floatformat:0 }}</td>
       <td><a href="{% url 'presupuestos:detail' p.pk %}">Ver</a></td>
     </tr>
-  {% empty %}<tr><td colspan="5">Sin presupuestos</td></tr>{% endfor %}
+  {% empty %}<tr><td colspan="6">Sin presupuestos</td></tr>{% endfor %}
   </tbody>
 </table>

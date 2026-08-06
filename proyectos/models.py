@@ -2,6 +2,15 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Max
 
+GENERALIDADES_DEFAULT = (
+    'DESPACHO DE PRODUCTOS A LA OBRA\n'
+    'INSTALACION DE PRODUCTOS\n'
+    'GARANTIA DE 12 MESES A PARTIR DE LA FECHA DE ENTREGA (SUJETO A TERMINOS Y CONDICIONES)\n'
+    'TIEMPO DE FABRICACION 4 DIAS.\n'
+    'TIEMPO DE EJECUCION 10 DIAS\n'
+    'ANTICIPO 50% PARA EL COMIENZO DE LA OBRA - 50% AL FINALIZAR LA OBRA'
+)
+
 
 class EstadoProyecto(models.Model):
     nombre = models.CharField(max_length=120, unique=True)
@@ -24,6 +33,8 @@ class Proyecto(models.Model):
     codigo = models.CharField(max_length=32, unique=True, blank=True)
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True)
+    generalidades = models.TextField(blank=True, default=GENERALIDADES_DEFAULT)
+    progreso = models.PositiveSmallIntegerField(default=0, help_text='0–100')
     estado = models.ForeignKey(EstadoProyecto, on_delete=models.PROTECT, related_name='proyectos')
     clientes = models.ManyToManyField('clientes.Cliente', blank=True, related_name='proyectos')
     equipo = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='proyectos_equipo')
@@ -48,12 +59,18 @@ class Proyecto(models.Model):
 
     def save(self, *args, **kwargs):
         if not (self.codigo or '').strip():
-            # ponytail: next numeric codigo; ceiling race under concurrency → use DB sequence later
+            # ponytail: next numeric codigo; incluye Nº de ppto para no chocar con adicionales
             max_num = 0
             for c in Proyecto.objects.exclude(codigo='').values_list('codigo', flat=True):
                 if c and str(c).isdigit():
                     max_num = max(max_num, int(c))
             max_pk = Proyecto.objects.aggregate(m=Max('pk'))['m'] or 0
+            try:
+                from presupuestos.models import _max_numero_presupuesto
+
+                max_num = max(max_num, _max_numero_presupuesto())
+            except Exception:
+                pass
             self.codigo = str(max(max_num, max_pk) + 1)
         super().save(*args, **kwargs)
 

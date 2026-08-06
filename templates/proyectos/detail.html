@@ -10,21 +10,45 @@
     </h3>
   </div>
   <div class="title_right">
-    <a class="btn btn-default" href="{% url 'proyectos:edit' proyecto.pk %}">Editar</a>
-    <a class="btn btn-primary" href="{% url 'proyectos:pdf_reporte' proyecto.pk %}" target="_blank">Descargar PDF</a>
+    {% if not is_cliente_view %}
+    <a class="btn btn-default" href="{% url 'proyectos:edit' proyecto.pk %}" data-nx-modal data-nx-modal-title="Editar proyecto">Editar</a>
+    {% endif %}
+    <a class="btn btn-primary" href="{% url 'proyectos:pdf_reporte' proyecto.pk %}" target="_blank"><i class="fa fa-download"></i> Descargar PDF</a>
   </div>
 </div>
-<p class="nx-page-sub">Detalle del proyecto · abre en pestaña dedicada</p>
 
-<ul class="nav nav-tabs">
-  <li class="{% if tab == 'resumen' %}active{% endif %}"><a href="?tab=resumen">General</a></li>
-  <li class="{% if tab == 'activos' %}active{% endif %}"><a href="?tab=activos">Activos</a></li>
-  <li class="{% if tab == 'incidencias' %}active{% endif %}"><a href="?tab=incidencias">Incidencias</a></li>
-  <li class="{% if tab == 'documentos' %}active{% endif %}"><a href="?tab=documentos">Documentos</a></li>
-  <li class="{% if tab == 'mantenimiento' %}active{% endif %}"><a href="?tab=mantenimiento">Mantenimiento</a></li>
-  <li class="{% if tab == 'presupuestos' %}active{% endif %}"><a href="?tab=presupuestos">Presupuestos</a></li>
-  <li class="{% if tab == 'timeline' %}active{% endif %}"><a href="?tab=timeline">Línea de tiempo</a></li>
-  <li class="{% if tab == 'descargas' %}active{% endif %}"><a href="?tab=descargas">Descargas</a></li>
+<ul class="nav nav-tabs nx-project-tabs">
+  <li class="{% if tab == 'resumen' %}active{% endif %}">
+    <a href="?tab=resumen"><i class="fa fa-file-text-o"></i> Presupuesto</a>
+  </li>
+  <li class="{% if tab == 'activos' %}active{% endif %}">
+    <a href="?tab=activos"><i class="fa fa-life-ring"></i> Gestión de Activos</a>
+  </li>
+  <li class="{% if tab == 'incidencias' %}active{% endif %}">
+    <a href="?tab=incidencias"><i class="fa fa-exclamation-triangle"></i> Incidencias</a>
+  </li>
+  <li class="{% if tab == 'presupuestos' %}active{% endif %}">
+    <a href="?tab=presupuestos"><i class="fa fa-files-o"></i> Presupuestos Adicionales</a>
+  </li>
+  <li class="{% if tab == 'timeline' %}active{% endif %}">
+    <a href="?tab=timeline"><i class="fa fa-clock-o"></i> Línea de Tiempo</a>
+  </li>
+  <li class="{% if tab == 'documentos' %}active{% endif %}">
+    <a href="?tab=documentos"><i class="fa fa-file"></i> Documentos</a>
+  </li>
+  {% if not is_cliente_view %}
+  <li class="{% if tab == 'mantenimiento' %}active{% endif %}">
+    <a href="?tab=mantenimiento"><i class="fa fa-wrench"></i> Mantenimiento</a>
+  </li>
+  <li class="{% if tab == 'descargas' %}active{% endif %}">
+    <a href="?tab=descargas"><i class="fa fa-cloud-download"></i> Descargas</a>
+  </li>
+  {% endif %}
+  <li>
+    <a href="{% url 'proyectos:pdf_reporte' proyecto.pk %}" target="_blank" class="nx-tab-pdf">
+      <i class="fa fa-download"></i> Descargar Reporte PDF
+    </a>
+  </li>
 </ul>
 
 <div class="x_panel nx-tab-panel">

@@ -1,0 +1,367 @@
+{% load l10n %}
+{% with r=resumen c=cliente_principal %}
+
+{# —— Info presupuesto —— #}
+<div class="x_panel">
+  <div class="x_title"><h2>Información del Presupuesto</h2><div class="clearfix"></div></div>
+  <div class="x_content">
+    <div class="row">
+      <div class="col-md-6">
+        <p><strong>Nº Presupuesto:</strong> {{ presupuesto.numero|default:presupuesto.pk }}</p>
+        <p><strong>Fecha:</strong> {{ presupuesto.created_at|date:"Y-m-d" }}</p>
+        <p><strong>Obra:</strong> {{ presupuesto.proyecto.nombre }}</p>
+        <p><strong>Tipo:</strong>
+          <span class="label {% if presupuesto.tipo == 'inicial' %}label-primary{% else %}label-info{% endif %}">
+            {% if presupuesto.tipo == 'inicial' %}Principal{% else %}{{ presupuesto.get_tipo_display }}{% endif %}
+          </span>
+          <span class="label label-default">{{ presupuesto.get_estado_display }}</span>
+        </p>
+        {% if presupuesto.estado == 'borrador' %}
+        <form method="post" action="{% url 'presupuestos:enviar' presupuesto.pk %}" style="margin-top:8px">{% csrf_token %}
+          <button class="btn btn-primary btn-sm" type="submit">Enviar a cliente</button>
+        </form>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <p><strong>Cliente:</strong> {% if c %}{{ c.display_name }}{% else %}—{% endif %}</p>
+        <p><strong>Email:</strong> {% if c and c.email %}{{ c.email }}{% else %}—{% endif %}</p>
+        <p><strong>Teléfono:</strong> {% if c and c.telefono %}{{ c.telefono }}{% else %}—{% endif %}</p>
+        <form method="post" action="{% url 'presupuestos:pct_empresa_save' presupuesto.pk %}" class="form-inline" style="margin-top:10px">
+          {% csrf_token %}
+          <label><strong>% Empresa:</strong></label>
+          {{ pct_form.pct_empresa }}
+          <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# —— Secundarios —— #}
+<div class="x_panel">
+  <div class="x_title">
+    <h2>Presupuestos Secundarios</h2>
+    <ul class="nav navbar-right panel_toolbox">
+      <li>
+        <a class="btn btn-success btn-xs" href="{% url 'presupuestos:create_adicional' presupuesto.proyecto_id %}" data-nx-modal data-nx-modal-title="Presupuesto secundario">
+          + Crear Presupuesto Secundario
+        </a>
+      </li>
+    </ul>
+    <div class="clearfix"></div>
+  </div>
+  <table class="table table-striped">
+    <thead>
+      <tr><th>Nº</th><th>Fecha</th><th>Vínculo</th><th>Descripción</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+    {% for s in secundarios %}
+      <tr>
+        <td>{{ s.numero|default:s.pk }}</td>
+        <td>{{ s.created_at|date:"Y-m-d" }}</td>
+        <td>
+          {% if s.incidencia %}Incidencia #{{ s.incidencia_id }}
+          {% elif s.visita_mantenimiento_id %}Visita #{{ s.visita_mantenimiento_id }}
+          {% else %}—{% endif %}
+        </td>
+        <td>{{ s.titulo }}</td>
+        <td><a class="btn btn-primary btn-xs" href="{% url 'presupuestos:detail' s.pk %}">Gestionar</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="text-muted">No hay presupuestos secundarios.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# —— Items (vista compacta + matriz) —— #}
+<div class="x_panel">
+  <div class="x_title">
+    <h2>Items del Presupuesto</h2>
+    <ul class="nav navbar-right panel_toolbox">
+      <li>
+        <a class="btn btn-success btn-xs" href="{% url 'presupuestos:item_add' presupuesto.pk %}" data-nx-modal data-nx-modal-title="Nuevo ítem">+ Agregar Item</a>
+      </li>
+    </ul>
+    <div style="margin:8px 0">
+      <button type="button" class="btn btn-xs btn-default matriz-toggle" data-group="maquila">+/− Maquila</button>
+      <button type="button" class="btn btn-xs btn-default matriz-toggle" data-group="instalacion">+/− Instalación</button>
+      <button type="button" class="btn btn-xs btn-default matriz-toggle" data-group="desinstalacion">+/− Desinstalación</button>
+      <button type="button" class="btn btn-xs btn-default matriz-toggle" data-group="ferreteria">+/− Ferretería</button>
+      <button type="button" class="btn btn-xs btn-default matriz-toggle" data-group="flete">+/− Flete</button>
+      <button type="button" class="btn btn-xs btn-default matriz-toggle" data-group="gg">+/− GG</button>
+      <button type="button" class="btn btn-xs btn-default matriz-toggle" data-group="utilidad">+/− Utilidad</button>
+    </div>
+    <div class="clearfix"></div>
+  </div>
+  <div class="table-responsive">
+  <table class="table table-bordered matriz-table" id="matriz-costos">
+    <thead>
+      <tr>
+        <th>Referencia</th><th>Cant.</th><th>Ubicación</th><th>Tipología</th>
+        <th>Insumos</th>
+        <th class="g-maquila matriz-calc">Maquila</th>
+        <th class="g-instalacion matriz-calc">Instalación</th>
+        <th class="g-desinstalacion matriz-calc">Desinstalación</th>
+        <th class="g-ferreteria matriz-calc">Materiales</th>
+        <th class="g-gg matriz-calc">Gastos Gen.</th>
+        <th class="g-utilidad">Utilidad %</th>
+        <th class="g-flete matriz-calc">Flete</th>
+        <th class="matriz-calc">Valor Unit.</th><th class="matriz-calc">Total</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in presupuesto.items.all %}
+      <tr>
+        <td>{{ item.referencia|default:item.descripcion }}</td>
+        <td class="nx-num">{{ item.cantidad|unlocalize }}</td>
+        <td>{{ item.ubicacion|default:"" }}</td>
+        <td>{{ item.tipologia|default:"" }}</td>
+        <td class="nx-num">{% if item.tipo == 'servicio' %}—{% else %}${{ item.costo_insumo|floatformat:0 }}{% endif %}</td>
+        <td class="g-maquila nx-num matriz-calc">${{ item.total_maquila|floatformat:0 }}</td>
+        <td class="g-instalacion nx-num matriz-calc">${{ item.total_instalacion|floatformat:0 }}</td>
+        <td class="g-desinstalacion nx-num matriz-calc">${{ item.total_desinstalacion|floatformat:0 }}</td>
+        <td class="g-ferreteria nx-num matriz-calc">${{ item.total_ferreteria|floatformat:0 }}</td>
+        <td class="g-gg nx-num matriz-calc">${{ item.total_gg|floatformat:0 }}</td>
+        <td class="g-utilidad nx-num">{{ item.pct_utilidad|unlocalize }}%</td>
+        <td class="g-flete nx-num matriz-calc">${{ item.total_flete|floatformat:0 }}</td>
+        <td class="nx-num matriz-calc"><strong>${{ item.neto_unidad|floatformat:0 }}</strong></td>
+        <td class="nx-num matriz-calc"><strong>${{ item.subtotal|floatformat:0 }}</strong></td>
+        <td>
+          <a class="btn btn-info btn-xs" href="{% url 'presupuestos:item_edit' item.pk %}" data-nx-modal data-nx-modal-title="Editar ítem">Editar</a>
+          <form method="post" action="{% url 'presupuestos:item_delete' item.pk %}" style="display:inline" onsubmit="return confirm('¿Eliminar?')">{% csrf_token %}
+            <button class="btn btn-xs btn-danger" type="submit">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}<tr><td colspan="15">Sin ítems</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+{# —— Facturas —— #}
+<div class="x_panel">
+  <div class="x_title">
+    <h2>Facturas y Boletas</h2>
+    <a class="btn btn-primary btn-sm" href="{% url 'presupuestos:factura_add' presupuesto.proyecto_id %}?presupuesto={{ presupuesto.pk }}" data-nx-modal data-nx-modal-title="Subir Factura/Boleta">Subir Factura/Boleta</a>
+    <div class="clearfix"></div>
+  </div>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Tipo</th><th>Número</th><th>Proveedor</th><th>Fecha Emisión</th>
+        <th>Neto</th><th>IVA</th><th>Total</th><th>Gastos Vinculados</th><th>Archivo</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for f in presupuesto.facturas.all %}
+      <tr {% if f.suma_gastos > f.total %}class="danger"{% endif %}>
+        <td>{{ f.get_tipo_display }}</td>
+        <td>{{ f.numero }}</td>
+        <td>{{ f.proveedor|default:"—" }}</td>
+        <td>{{ f.fecha|date:"d/m/Y" }}</td>
+        <td>${{ f.monto_neto|floatformat:0 }}</td>
+        <td>${{ f.monto_iva|floatformat:0 }}</td>
+        <td>${{ f.total|floatformat:0 }}</td>
+        <td>
+          <span class="badge">{{ f.gastos.count }}</span>
+          ${{ f.suma_gastos|floatformat:0 }}
+        </td>
+        <td>{% if f.archivo %}<a class="btn btn-xs btn-info" href="{{ f.archivo.url }}" target="_blank">Ver</a>{% else %}<span class="text-danger">Sin archivo</span>{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="9">Sin facturas</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# —— Gastos —— #}
+<div class="x_panel">
+  <div class="x_title">
+    <h2>Gastos del Proyecto</h2>
+    <a class="btn btn-success btn-sm" href="{% url 'presupuestos:gasto_add' presupuesto.proyecto_id %}?presupuesto={{ presupuesto.pk }}" data-nx-modal data-nx-modal-title="Nuevo gasto">+ Agregar Gasto</a>
+    <div class="clearfix"></div>
+  </div>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Descripción</th><th>Monto</th><th>Tipo</th><th>Pagado por</th>
+        <th>Factura/Boleta</th><th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for g in presupuesto.gastos.all %}
+      <tr>
+        <td>{{ g.descripcion }}</td>
+        <td>${{ g.monto|floatformat:0 }}</td>
+        <td>{{ g.get_tipo_display }}</td>
+        <td>
+          {% if g.pagado_por_tipo == 'empresa' %}Empresa
+          {% elif g.pagado_por_tipo == 'usuario' %}{{ g.pagado_por.get_full_name|default:g.pagado_por.username }}
+          {% else %}Caja del Proyecto{% endif %}
+        </td>
+        <td>
+          {% if g.factura %}
+            <span class="label label-info">{{ g.factura.get_tipo_display }} {{ g.factura.numero }}</span>
+          {% else %}
+            <span class="label label-default">Sin Vincular</span>
+          {% endif %}
+        </td>
+        <td>{{ g.fecha|date:"d/m/Y" }}</td>
+      </tr>
+    {% empty %}<tr><td colspan="6">Sin gastos</td></tr>{% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th>Total Gastos</th>
+        <th colspan="5">${{ r.total_gastos|floatformat:0 }}</th>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+{# —— Pagos empleados —— #}
+<div class="x_panel">
+  <div class="x_title">
+    <h2><i class="fa fa-users"></i> Pagos a Empleados</h2>
+    <ul class="nav navbar-right panel_toolbox">
+      <li>
+        <a class="btn btn-success btn-xs" href="{% url 'presupuestos:pago_add' presupuesto.pk %}" data-nx-modal data-nx-modal-title="Agregar empleado">+ Agregar Empleado</a>
+      </li>
+    </ul>
+    <div class="clearfix"></div>
+  </div>
+  <div class="row">
+    {% for p in r.pagos %}
+    <div class="col-md-6" style="margin-bottom:16px">
+      <div class="nx-pago-card">
+        <h5><i class="fa fa-user"></i> {{ p.empleado_nombre }}</h5>
+        <div class="row">
+          <div class="col-xs-7">
+            <p><strong>% Pago:</strong> {{ p.porcentaje_pago|floatformat:1 }}%</p>
+            <p><strong>Por utilidad:</strong> ${{ p.pago_por_utilidad|floatformat:0 }}</p>
+            <p class="nx-pago-plus"><strong>+ Gastos Pagados (a sumar):</strong> ${{ p.gastos_pagados|floatformat:0 }}</p>
+            {% if p.anticipo > 0 %}
+            <p class="nx-pago-minus"><strong>− Anticipo (a descontar):</strong> ${{ p.anticipo|floatformat:0 }}</p>
+            <p class="small">
+              {% if p.quien_anticipo_tipo == 'empresa' %}Pagado por Empresa
+              {% elif p.quien_anticipo_tipo == 'usuario' %}Pagado por: {{ p.quien_anticipo_nombre }} (a devolver)
+              {% else %}Pagado por Caja del Proyecto (no se devuelve){% endif %}
+            </p>
+            {% endif %}
+          </div>
+          <div class="col-xs-5">
+            <div class="nx-pago-total">
+              <small>PAGO TOTAL</small>
+              <strong>${{ p.pago_total|floatformat:0 }}</strong>
+            </div>
+            <div style="margin-top:10px;text-align:right">
+              <a class="btn btn-default btn-xs" href="{% url 'presupuestos:pago_edit' p.id %}" data-nx-modal data-nx-modal-title="Editar pago">Editar</a>
+              <form method="post" action="{% url 'presupuestos:pago_delete' p.id %}" style="display:inline" onsubmit="return confirm('¿Eliminar?')">{% csrf_token %}
+                <button class="btn btn-danger btn-xs" type="submit">Eliminar</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-md-12">
+      <p class="text-muted"><i class="fa fa-info-circle"></i> No hay empleados asignados. Agrega empleados para asignar pagos.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# —— Resumen financiero —— #}
+<div class="x_panel">
+  <div class="x_title"><h2><i class="fa fa-calculator"></i> Resumen Financiero</h2><div class="clearfix"></div></div>
+  <div class="row">
+    <div class="col-md-6" style="margin-bottom:16px">
+      <div class="nx-fin-card nx-fin-ingresos">
+        <h5>Ingresos del Proyecto</h5>
+        <p>Total Neto: <span>${{ r.neto|floatformat:0 }}</span></p>
+        <p>IVA ({{ r.iva_pct|floatformat:1 }}%): <span>${{ r.iva|floatformat:0 }}</span></p>
+        <p class="nx-fin-foot">TOTAL PROYECTO: ${{ r.total_proyecto|floatformat:0 }}</p>
+      </div>
+    </div>
+    <div class="col-md-6" style="margin-bottom:16px">
+      <div class="nx-fin-card nx-fin-utilidad">
+        <h5>Distribución de la Utilidad Real</h5>
+        <p>Utilidad Real (Neto − Gastos): <span>${{ r.utilidad_real|floatformat:0 }}</span></p>
+        <p>% Empresa ({{ r.pct_empresa|floatformat:1 }}%): <span>${{ r.utilidad_empresa|floatformat:0 }}</span></p>
+        <p>Gastos pagados por Empresa: <span>${{ r.gastos_empresa|floatformat:0 }}</span></p>
+        <p>Pagos a Empleados: <span>${{ r.total_pagos_empleados|floatformat:0 }}</span></p>
+        <p class="nx-fin-foot">DIFERENCIA (Recibe Empresa): ${{ r.recibe_empresa|floatformat:0 }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="nx-fin-card nx-fin-verif">
+    <h5>Verificación de Cálculos</h5>
+    <div class="row">
+      <div class="col-md-6">
+        <p>Neto: <span>${{ r.neto|floatformat:0 }}</span></p>
+        <p>Utilidad Real: <span>${{ r.utilidad_real|floatformat:0 }}</span></p>
+        <p>Total Gastos: <span>${{ r.total_gastos|floatformat:0 }}</span></p>
+        <p>
+          {% if r.verificacion_neto_ok %}<i class="fa fa-check text-success"></i>{% else %}<i class="fa fa-times text-danger"></i>{% endif %}
+          Check Neto = Utilidad + Gastos
+        </p>
+        <p>Total Pagos Empleados: <span>${{ r.total_pagos_empleados|floatformat:0 }}</span></p>
+        <p>Diferencia Empresa: <span>${{ r.recibe_empresa|floatformat:0 }}</span></p>
+      </div>
+      <div class="col-md-6">
+        <p>% Empleados: <span>{{ r.total_porcentaje_empleados|floatformat:2 }}%</span></p>
+        <p>% Empresa: <span>{{ r.pct_empresa|floatformat:2 }}%</span></p>
+        <p>Total % Distribución: <span>{{ r.total_porcentaje_distribucion|floatformat:2 }}%</span></p>
+        <p>
+          {% if r.verificacion_porcentajes_ok %}<i class="fa fa-check text-success"></i>{% else %}<i class="fa fa-times text-danger"></i>{% endif %}
+          Check % = 100%
+        </p>
+        <p>
+          {% if r.verificacion_utilidad_ok %}<i class="fa fa-check text-success"></i>{% else %}<i class="fa fa-times text-danger"></i>{% endif %}
+          Utilidad distribuida: ${{ r.utilidad_distribuida|floatformat:0 }}
+        </p>
+      </div>
+    </div>
+    <p class="nx-fin-suma">SUMA TOTAL (Neto): ${{ r.neto|floatformat:0 }}</p>
+    <p class="small" style="opacity:.85;margin:0">
+      Neto ≈ Recibe Empresa + Pagos Empleados + Gastos Caja + Anticipos Caja
+      {% if r.verificacion_final_ok %}<i class="fa fa-check"></i>{% else %}<i class="fa fa-warning"></i>{% endif %}
+    </p>
+  </div>
+</div>
+
+{# —— IVA —— #}
+<div class="x_panel">
+  <div class="nx-fin-card nx-fin-iva">
+    <h5><i class="fa fa-file-text-o"></i> Ejercicio IVA Crédito e IVA Compra</h5>
+    <div class="row">
+      <div class="col-md-6">
+        <p>IVA Crédito (Compras): <span>${{ r.iva_credito|floatformat:0 }}</span>
+          <i class="fa fa-info-circle" title="Suma del IVA de facturas/boletas registradas"></i>
+        </p>
+      </div>
+      <div class="col-md-6">
+        <p>IVA Compra (Ventas): <span>${{ r.iva_compra|floatformat:0 }}</span>
+          <i class="fa fa-info-circle" title="IVA del presupuesto sobre el neto"></i>
+        </p>
+      </div>
+      <div class="col-md-6">
+        <p><strong>IVA a Pagar Real:</strong> <span>${{ r.iva_a_pagar|floatformat:0 }}</span></p>
+      </div>
+      <div class="col-md-6">
+        <p>
+          <strong>Diferencia IVA:</strong> <span>${{ r.diferencia_iva|floatformat:0 }}</span>
+          {% if r.diferencia_iva > 0 %}
+            <i class="fa fa-warning" style="color:#fbbf24"></i> <small>Debe pagar IVA</small>
+          {% elif r.diferencia_iva < 0 %}
+            <small>Crédito a favor</small>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endwith %}
