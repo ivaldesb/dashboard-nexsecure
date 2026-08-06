@@ -2,16 +2,18 @@
   <div class="navbar nav_title">
     <a href="{% url 'core:dashboard' %}" class="site_title">
       <span class="nx-brand-mark">N</span>
-      <span>NexSecure</span>
+      <span class="nx-brand-text">NexSecure</span>
     </a>
   </div>
   <div class="clearfix"></div>
 
   <div class="nx-sidebar-profile">
     <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
-    {% if sidebar_is_admin %}Administrador
-    {% elif sidebar_is_cliente %}Portal cliente
-    {% else %}Equipo{% endif %}
+    <span class="nx-sidebar-role">
+      {% if sidebar_is_admin %}Administrador
+      {% elif sidebar_is_cliente %}Portal cliente
+      {% else %}Equipo{% endif %}
+    </span>
     {% if request.user.tag %}<span class="nx-tag">{{ request.user.tag }}</span>{% endif %}
   </div>
 

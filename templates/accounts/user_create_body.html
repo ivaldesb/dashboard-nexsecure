@@ -6,7 +6,7 @@
     {% if field.help_text %}<p class="help-block">{{ field.help_text }}</p>{% endif %}
   </div>
 {% endfor %}
-<div class="form-group">
+<div class="form-group nx-full">
   <label>Roles</label>
   {% for r in roles %}
     <div class="checkbox"><label><input type="checkbox" name="roles" value="{{ r.pk }}"> {{ r.name }}</label></div>

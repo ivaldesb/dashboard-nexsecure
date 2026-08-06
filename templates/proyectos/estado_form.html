@@ -3,16 +3,18 @@
 {% block content %}
 <div class="x_panel">
   <div class="x_title"><h2>{{ title }}</h2><div class="clearfix"></div></div>
-  <form method="post">{% csrf_token %}
+  <form method="post" class="nx-form-grid">{% csrf_token %}
     {% for field in form %}
       <div class="form-group">
-        <label>{{ field.label }}</label>
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field.errors }}
         {{ field }}
       </div>
     {% endfor %}
-    <button class="btn btn-success" type="submit">Guardar</button>
-    <a class="btn btn-default" href="{% url 'proyectos:estado_list' %}">Cancelar</a>
+    <div class="nx-form-actions">
+      <button class="btn btn-success" type="submit">Guardar</button>
+      <a class="btn btn-default" href="{% url 'proyectos:estado_list' %}">Cancelar</a>
+    </div>
   </form>
 </div>
 {% endblock %}

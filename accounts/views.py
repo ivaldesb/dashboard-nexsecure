@@ -43,8 +43,16 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect('core:dashboard')
     form = AuthenticationForm(request, data=request.POST or None)
-    for field in form.fields.values():
-        field.widget.attrs.setdefault('class', 'form-control')
+    form.fields['username'].widget.attrs.update({
+        'class': 'form-control',
+        'placeholder': 'Tu usuario',
+        'autocomplete': 'username',
+    })
+    form.fields['password'].widget.attrs.update({
+        'class': 'form-control',
+        'placeholder': 'Tu contraseña',
+        'autocomplete': 'current-password',
+    })
     if request.method == 'POST' and form.is_valid():
         auth_login(request, form.get_user())
         return redirect(request.GET.get('next') or 'core:dashboard')
