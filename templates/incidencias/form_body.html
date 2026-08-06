@@ -1,0 +1,11 @@
+{% for field in form %}
+  <div class="form-group">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field.errors }}
+    {{ field }}
+  </div>
+{% endfor %}
+<div class="form-group">
+  <label>Fotos</label>
+  <input type="file" name="fotos" class="form-control" accept="image/*" multiple>
+</div>

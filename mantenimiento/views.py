@@ -1,8 +1,10 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
+from core.modal import modal_form, modal_success
 from mantenimiento.forms import VisitaMantenimientoForm
 from mantenimiento.models import ChecklistTemplate, FotoVisita, VisitaChecklistItem, VisitaMantenimiento
 from proyectos.models import Proyecto
@@ -42,13 +44,18 @@ def create(request, proyecto_id):
                 for item in template.items.all()
             ])
         messages.success(request, 'Visita de mantenimiento creada.')
-        return redirect('mantenimiento:detail', pk=visita.pk)
-    return render(request, 'mantenimiento/form.html', {
-        'form': form,
-        'proyecto': proyecto,
-        'title': 'Nueva visita de mantenimiento',
-        'templates': ChecklistTemplate.objects.all(),
-    })
+        return modal_success(request, reverse('mantenimiento:detail', args=[visita.pk]))
+    return modal_form(
+        request,
+        title='Nueva visita de mantenimiento',
+        form=form,
+        action_url=reverse('mantenimiento:create', args=[proyecto.pk]),
+        extra={
+            'cancel_url': reverse('mantenimiento:list', args=[proyecto.pk]),
+            'proyecto': proyecto,
+            'templates': ChecklistTemplate.objects.all(),
+        },
+    )
 
 
 def detail(request, pk):

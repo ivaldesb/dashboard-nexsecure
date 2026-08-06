@@ -4,9 +4,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
+from core.modal import modal_form, modal_success
 from core.pdf import render_presupuesto_pdf
 from presupuestos.forms import FacturaForm, GastoForm, PresupuestoAdicionalForm, PresupuestoItemForm
-from presupuestos.models import Presupuesto, PresupuestoItem
+from presupuestos.models import FacturaBoleta, Presupuesto, PresupuestoItem
 from proyectos.models import Proyecto, TimelineEvent
 
 
@@ -77,6 +78,7 @@ def detail(request, presupuesto_id):
 def create_adicional(request, proyecto_id):
     proyecto = _get_proyecto_or_403(request, proyecto_id)
     form = PresupuestoAdicionalForm(request.POST or None)
+    success_url = _proyecto_presupuestos_url(proyecto)
     if request.method == 'POST' and form.is_valid():
         presupuesto = form.save(commit=False)
         presupuesto.proyecto = proyecto
@@ -90,13 +92,14 @@ def create_adicional(request, proyecto_id):
             titulo=f'Presupuesto adicional: {presupuesto.titulo}',
         )
         messages.success(request, 'Presupuesto adicional creado.')
-        return redirect('presupuestos:detail', presupuesto_id=presupuesto.pk)
-    return render(request, 'presupuestos/form.html', {
-        'form': form,
-        'title': 'Nuevo presupuesto adicional',
-        'proyecto': proyecto,
-        'cancel_url': _proyecto_presupuestos_url(proyecto),
-    })
+        return modal_success(request, success_url)
+    return modal_form(
+        request,
+        title='Nuevo presupuesto adicional',
+        form=form,
+        action_url=reverse('presupuestos:create_adicional', args=[proyecto.pk]),
+        extra={'cancel_url': success_url, 'proyecto': proyecto},
+    )
 
 
 @require_http_methods(['GET', 'POST'])
@@ -110,13 +113,19 @@ def item_add(request, presupuesto_id):
         item.presupuesto = presupuesto
         item.save()
         messages.success(request, 'Ítem añadido.')
-        return redirect('presupuestos:detail', presupuesto_id=presupuesto.pk)
-    return render(request, 'presupuestos/item_form.html', {
-        'form': form,
-        'title': 'Añadir ítem',
-        'presupuesto': presupuesto,
-        'cancel_url': _detail_url(presupuesto.pk),
-    })
+        return modal_success(request, _detail_url(presupuesto.pk))
+    return modal_form(
+        request,
+        title='Añadir ítem',
+        form=form,
+        action_url=reverse('presupuestos:item_add', args=[presupuesto.pk]),
+        extra={
+            'form_body_template': 'presupuestos/item_form_body.html',
+            'presupuesto': presupuesto,
+            'cancel_url': _detail_url(presupuesto.pk),
+            'include_matriz_js': True,
+        },
+    )
 
 
 @require_http_methods(['GET', 'POST'])
@@ -130,13 +139,19 @@ def item_edit(request, pk):
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Ítem actualizado.')
-        return redirect('presupuestos:detail', presupuesto_id=item.presupuesto_id)
-    return render(request, 'presupuestos/item_form.html', {
-        'form': form,
-        'title': 'Editar ítem',
-        'presupuesto': item.presupuesto,
-        'cancel_url': _detail_url(item.presupuesto_id),
-    })
+        return modal_success(request, _detail_url(item.presupuesto_id))
+    return modal_form(
+        request,
+        title='Editar ítem',
+        form=form,
+        action_url=reverse('presupuestos:item_edit', args=[pk]),
+        extra={
+            'form_body_template': 'presupuestos/item_form_body.html',
+            'presupuesto': item.presupuesto,
+            'cancel_url': _detail_url(item.presupuesto_id),
+            'include_matriz_js': True,
+        },
+    )
 
 
 @require_POST
@@ -157,7 +172,15 @@ def gasto_add(request, proyecto_id):
     proyecto = _get_proyecto_or_403(request, proyecto_id)
     presupuesto_id = request.GET.get('presupuesto') or request.POST.get('presupuesto')
     presupuesto = _presupuesto_de_proyecto(proyecto, presupuesto_id) if presupuesto_id else None
-    form = GastoForm(request.POST or None)
+    form = GastoForm(
+        request.POST or None,
+        proyecto=proyecto,
+        presupuesto=presupuesto,
+    )
+    success_url = _detail_url(presupuesto.pk) if presupuesto else _proyecto_presupuestos_url(proyecto)
+    action_url = reverse('presupuestos:gasto_add', args=[proyecto.pk])
+    if presupuesto:
+        action_url += f'?presupuesto={presupuesto.pk}'
     if request.method == 'POST' and form.is_valid():
         gasto = form.save(commit=False)
         gasto.proyecto = proyecto
@@ -172,17 +195,23 @@ def gasto_add(request, proyecto_id):
             detalle=str(gasto.monto),
         )
         messages.success(request, 'Gasto registrado.')
-        if presupuesto:
-            return redirect('presupuestos:detail', presupuesto_id=presupuesto.pk)
-        return redirect(_proyecto_presupuestos_url(proyecto))
-    return render(request, 'presupuestos/form.html', {
-        'form': form,
-        'title': 'Registrar gasto',
+        return modal_success(request, success_url)
+    if not FacturaBoleta.objects.filter(proyecto=proyecto).exists():
+        messages.warning(request, 'Primero sube una factura o boleta para poder registrar gastos.')
+    extra = {
+        'cancel_url': success_url,
         'proyecto': proyecto,
         'presupuesto': presupuesto,
-        'cancel_url': _detail_url(presupuesto.pk) if presupuesto else _proyecto_presupuestos_url(proyecto),
-        'extra_fields': {'presupuesto': presupuesto.pk} if presupuesto else None,
-    })
+    }
+    if presupuesto:
+        extra['extra_hidden'] = {'presupuesto': presupuesto.pk}
+    return modal_form(
+        request,
+        title='Registrar gasto',
+        form=form,
+        action_url=action_url,
+        extra=extra,
+    )
 
 
 @require_POST
@@ -202,6 +231,10 @@ def enviar(request, pk):
     return redirect('presupuestos:detail', presupuesto_id=pk)
 
 
+def _volver_proyecto_general(presupuesto):
+    return reverse('proyectos:detail', args=[presupuesto.proyecto_id]) + '?tab=resumen'
+
+
 @require_POST
 def aceptar(request, pk):
     presupuesto = _get_presupuesto_or_403(request, pk)
@@ -209,7 +242,7 @@ def aceptar(request, pk):
         raise PermissionDenied
     if presupuesto.estado != Presupuesto.ENVIADO:
         messages.error(request, 'Solo se pueden aceptar presupuestos enviados.')
-        return redirect('presupuestos:detail', presupuesto_id=pk)
+        return redirect(_volver_proyecto_general(presupuesto))
     presupuesto.estado = Presupuesto.ACEPTADO
     presupuesto.save(update_fields=['estado', 'updated_at'])
     TimelineEvent.objects.create(
@@ -219,7 +252,8 @@ def aceptar(request, pk):
         titulo=f'Presupuesto aceptado: {presupuesto.titulo}',
     )
     messages.success(request, 'Presupuesto aceptado.')
-    return redirect('presupuestos:detail', presupuesto_id=pk)
+    next_url = request.POST.get('next') or _volver_proyecto_general(presupuesto)
+    return redirect(next_url)
 
 
 @require_POST
@@ -229,14 +263,14 @@ def rechazar(request, pk):
         raise PermissionDenied
     if presupuesto.estado != Presupuesto.ENVIADO:
         messages.error(request, 'Solo se pueden rechazar presupuestos enviados.')
-        return redirect('presupuestos:detail', presupuesto_id=pk)
+        return redirect(_volver_proyecto_general(presupuesto))
     comentario = (request.POST.get('comentario') or '').strip()
+    if not comentario:
+        messages.error(request, 'Indica un comentario al rechazar.')
+        return redirect(_volver_proyecto_general(presupuesto))
     presupuesto.estado = Presupuesto.RECHAZADO
-    if comentario:
-        presupuesto.notas = (presupuesto.notas + '\n' if presupuesto.notas else '') + f'[Rechazo] {comentario}'
-        presupuesto.save(update_fields=['estado', 'notas', 'updated_at'])
-    else:
-        presupuesto.save(update_fields=['estado', 'updated_at'])
+    presupuesto.notas = (presupuesto.notas + '\n' if presupuesto.notas else '') + f'[Rechazo] {comentario}'
+    presupuesto.save(update_fields=['estado', 'notas', 'updated_at'])
     TimelineEvent.objects.create(
         proyecto=presupuesto.proyecto,
         actor=request.user,
@@ -245,7 +279,8 @@ def rechazar(request, pk):
         detalle=comentario,
     )
     messages.success(request, 'Presupuesto rechazado.')
-    return redirect('presupuestos:detail', presupuesto_id=pk)
+    next_url = request.POST.get('next') or _volver_proyecto_general(presupuesto)
+    return redirect(next_url)
 
 
 @require_http_methods(['GET', 'POST'])
@@ -254,6 +289,10 @@ def factura_add(request, proyecto_id):
     presupuesto_id = request.GET.get('presupuesto') or request.POST.get('presupuesto')
     presupuesto = _presupuesto_de_proyecto(proyecto, presupuesto_id) if presupuesto_id else None
     form = FacturaForm(request.POST or None, request.FILES or None)
+    success_url = _detail_url(presupuesto.pk) if presupuesto else _proyecto_presupuestos_url(proyecto)
+    action_url = reverse('presupuestos:factura_add', args=[proyecto.pk])
+    if presupuesto:
+        action_url += f'?presupuesto={presupuesto.pk}'
     if request.method == 'POST' and form.is_valid():
         factura = form.save(commit=False)
         factura.proyecto = proyecto
@@ -267,15 +306,19 @@ def factura_add(request, proyecto_id):
             detalle=str(factura.total),
         )
         messages.success(request, 'Factura/boleta registrada.')
-        if presupuesto:
-            return redirect('presupuestos:detail', presupuesto_id=presupuesto.pk)
-        return redirect(_proyecto_presupuestos_url(proyecto))
-    return render(request, 'presupuestos/form.html', {
-        'form': form,
-        'title': 'Registrar factura/boleta',
+        return modal_success(request, success_url)
+    extra = {
+        'cancel_url': success_url,
         'proyecto': proyecto,
         'presupuesto': presupuesto,
-        'cancel_url': _detail_url(presupuesto.pk) if presupuesto else _proyecto_presupuestos_url(proyecto),
-        'extra_fields': {'presupuesto': presupuesto.pk} if presupuesto else None,
-        'multipart': True,
-    })
+    }
+    if presupuesto:
+        extra['extra_hidden'] = {'presupuesto': presupuesto.pk}
+    return modal_form(
+        request,
+        title='Registrar factura/boleta',
+        form=form,
+        action_url=action_url,
+        multipart=True,
+        extra=extra,
+    )

@@ -200,28 +200,6 @@ class PresupuestoItem(models.Model):
         super().save(*args, **kwargs)
 
 
-class Gasto(models.Model):
-    proyecto = models.ForeignKey('proyectos.Proyecto', on_delete=models.CASCADE, related_name='gastos')
-    presupuesto = models.ForeignKey(
-        Presupuesto,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='gastos',
-    )
-    descripcion = models.CharField(max_length=255)
-    monto = models.DecimalField(max_digits=14, decimal_places=2)
-    fecha = models.DateField()
-    creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-fecha']
-
-    def __str__(self):
-        return f'{self.descripcion} (${self.monto})'
-
-
 class FacturaBoleta(models.Model):
     FACTURA = 'factura'
     BOLETA = 'boleta'
@@ -243,6 +221,7 @@ class FacturaBoleta(models.Model):
     fecha = models.DateField()
     monto_neto = models.DecimalField(max_digits=14, decimal_places=2)
     monto_iva = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    # null legado; el form exige archivo al crear
     archivo = models.FileField(upload_to='facturas/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -255,3 +234,43 @@ class FacturaBoleta(models.Model):
     @property
     def total(self):
         return self.monto_neto + self.monto_iva
+
+    def suma_gastos(self, exclude_pk=None):
+        qs = self.gastos.all()
+        if exclude_pk:
+            qs = qs.exclude(pk=exclude_pk)
+        return sum((g.monto for g in qs), ZERO)
+
+    def saldo_disponible(self, exclude_gasto_pk=None):
+        return self.total - self.suma_gastos(exclude_pk=exclude_gasto_pk)
+
+
+class Gasto(models.Model):
+    proyecto = models.ForeignKey('proyectos.Proyecto', on_delete=models.CASCADE, related_name='gastos')
+    presupuesto = models.ForeignKey(
+        Presupuesto,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='gastos',
+    )
+    # null solo para filas antiguas; el form exige factura al crear
+    factura = models.ForeignKey(
+        FacturaBoleta,
+        null=True,
+        blank=False,
+        on_delete=models.PROTECT,
+        related_name='gastos',
+        verbose_name='factura / boleta',
+    )
+    descripcion = models.CharField(max_length=255)
+    monto = models.DecimalField(max_digits=14, decimal_places=2)
+    fecha = models.DateField()
+    creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f'{self.descripcion} (${self.monto})'

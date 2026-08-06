@@ -3,11 +3,13 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from calendario.forms import EventoForm, TareaForm
 from calendario.models import CapaCalendario, Evento, Tarea
 from calendario.notify import notify_whatsapp
+from core.modal import modal_form, modal_success
 
 
 def _ensure_default_capa(user):
@@ -101,8 +103,14 @@ def create(request):
         evento.asignados.add(request.user)  # privacy: creador always subscribed
         _notify(evento, f'Nuevo evento: {evento.titulo}')
         messages.success(request, 'Evento creado.')
-        return redirect('calendario:detail', pk=evento.pk)
-    return render(request, 'calendario/form.html', {'form': form, 'title': 'Nuevo evento'})
+        return modal_success(request, reverse('calendario:list'))
+    return modal_form(
+        request,
+        title='Nuevo evento',
+        form=form,
+        action_url=reverse('calendario:create'),
+        extra={'cancel_url': reverse('calendario:list')},
+    )
 
 
 def detail(request, pk):
@@ -154,5 +162,11 @@ def create_tarea(request):
         form.save_m2m()
         tarea.asignados.add(request.user)
         messages.success(request, 'Tarea creada.')
-        return redirect('calendario:tareas')
-    return render(request, 'calendario/tarea_form.html', {'form': form, 'title': 'Nueva tarea'})
+        return modal_success(request, reverse('calendario:tareas'))
+    return modal_form(
+        request,
+        title='Nueva tarea',
+        form=form,
+        action_url=reverse('calendario:tarea_create'),
+        extra={'cancel_url': reverse('calendario:tareas')},
+    )

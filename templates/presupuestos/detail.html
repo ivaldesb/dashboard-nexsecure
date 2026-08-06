@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static l10n %}
 {% block title %}{{ presupuesto.titulo }}{% endblock %}
 {% block stylesheets %}
 <style>
-  .matriz-calc, .matriz-readonly { background:#d9edf7 !important; }
+  .matriz-calc, .matriz-readonly { background:#ecfeff !important; }
   .matriz-table { font-size:12px; white-space:nowrap; }
-  .matriz-table input.form-control { width:72px; display:inline-block; padding:2px 4px; height:28px; }
+  .matriz-table .nx-num { font-variant-numeric: tabular-nums; text-align:right; padding:6px 8px; }
   .matriz-group-hidden { display:none !important; }
 </style>
 {% endblock %}
@@ -31,7 +31,7 @@
   </form>
   <form method="post" action="{% url 'presupuestos:rechazar' presupuesto.pk %}" class="form-inline" style="display:inline-block;margin-left:10px">
     {% csrf_token %}
-    <input type="text" name="comentario" class="form-control" placeholder="Motivo (opcional)" style="width:220px">
+    <input type="text" name="comentario" class="form-control" placeholder="Motivo / comentario" style="width:260px" required>
     <button class="btn btn-danger" type="submit">Rechazar</button>
   </form>
 </div>
@@ -46,8 +46,6 @@
 <div class="x_panel">
   <p><strong>Proyecto:</strong> {{ presupuesto.proyecto.nombre }}</p>
   {% if presupuesto.notas %}<p><strong>Notas:</strong> {{ presupuesto.notas|linebreaksbr }}</p>{% endif %}
-  {% if presupuesto.incidencia_id %}<p><strong>Incidencia:</strong> #{{ presupuesto.incidencia_id }}</p>{% endif %}
-  {% if presupuesto.visita_mantenimiento_id %}<p><strong>Visita mantto:</strong> #{{ presupuesto.visita_mantenimiento_id }}</p>{% endif %}
   <p><strong>Total:</strong> ${{ presupuesto.total_items|floatformat:0 }}</p>
 </div>
 
@@ -56,7 +54,7 @@
     <h2>{% if is_cliente_view %}Cotización{% else %}Matriz de costos{% endif %}</h2>
     {% if not is_cliente_view %}
     <ul class="nav navbar-right panel_toolbox">
-      <li><a class="btn btn-success btn-sm" href="{% url 'presupuestos:item_add' presupuesto.pk %}">+ Ítem</a></li>
+      <li><a class="btn btn-success btn-sm" href="{% url 'presupuestos:item_add' presupuesto.pk %}" data-nx-modal data-nx-modal-title="Nuevo ítem">+ Ítem</a></li>
     </ul>
     <div style="margin:8px 0">
       <button type="button" class="btn btn-xs btn-default matriz-toggle" data-group="maquila">+/− Maquila</button>
@@ -78,9 +76,9 @@
     {% for item in presupuesto.items.all %}
       <tr>
         <td>{{ item.referencia|default:item.descripcion }}</td>
-        <td>{{ item.cantidad }}</td>
-        <td>${{ item.neto_unidad|floatformat:0 }}</td>
-        <td>${{ item.subtotal|floatformat:0 }}</td>
+        <td class="nx-num">{{ item.cantidad|floatformat:2 }}</td>
+        <td class="nx-num">${{ item.neto_unidad|floatformat:0 }}</td>
+        <td class="nx-num">${{ item.subtotal|floatformat:0 }}</td>
       </tr>
     {% empty %}<tr><td colspan="4">Sin ítems</td></tr>{% endfor %}
     </tbody>
@@ -106,49 +104,41 @@
       <tr class="matriz-row" data-tipo="{{ item.tipo }}">
         <td>{{ item.get_tipo_display }}</td>
         <td>{{ item.referencia|default:item.descripcion }}</td>
-        <td><input class="form-control matriz-cantidad" type="number" step="any" name="cantidad" value="{{ item.cantidad }}" form="item-form-{{ item.pk }}"></td>
-        <td class="matriz-costo-wrap"><input class="form-control matriz-costo_insumo" type="number" step="any" name="costo_insumo" value="{{ item.costo_insumo }}" form="item-form-{{ item.pk }}"></td>
+        <td class="nx-num">{{ item.cantidad|unlocalize }}</td>
+        <td class="nx-num">{% if item.tipo == 'servicio' %}—{% else %}{{ item.costo_insumo|unlocalize }}{% endif %}</td>
 
-        <td class="g-maquila matriz-pct-wrap"><input class="form-control matriz-pct_maquila" type="number" step="any" name="pct_maquila" value="{{ item.pct_maquila }}" form="item-form-{{ item.pk }}"></td>
-        <td class="g-maquila"><input class="form-control matriz-readonly matriz-vu-maquila" readonly tabindex="-1" value="{{ item.valor_unidad_maquila }}"></td>
-        <td class="g-maquila"><input class="form-control matriz-readonly matriz-tot-maquila" readonly tabindex="-1" value="{{ item.total_maquila }}"></td>
+        <td class="g-maquila nx-num">{{ item.pct_maquila|unlocalize }}</td>
+        <td class="g-maquila nx-num matriz-calc">{{ item.valor_unidad_maquila|floatformat:2|unlocalize }}</td>
+        <td class="g-maquila nx-num matriz-calc">{{ item.total_maquila|floatformat:2|unlocalize }}</td>
 
-        <td class="g-instalacion matriz-pct-wrap"><input class="form-control matriz-pct_instalacion" type="number" step="any" name="pct_instalacion" value="{{ item.pct_instalacion }}" form="item-form-{{ item.pk }}"></td>
-        <td class="g-instalacion"><input class="form-control matriz-readonly matriz-vu-instalacion" readonly tabindex="-1" value="{{ item.valor_unidad_instalacion }}"></td>
-        <td class="g-instalacion"><input class="form-control matriz-readonly matriz-tot-instalacion" readonly tabindex="-1" value="{{ item.total_instalacion }}"></td>
+        <td class="g-instalacion nx-num">{{ item.pct_instalacion|unlocalize }}</td>
+        <td class="g-instalacion nx-num matriz-calc">{{ item.valor_unidad_instalacion|floatformat:2|unlocalize }}</td>
+        <td class="g-instalacion nx-num matriz-calc">{{ item.total_instalacion|floatformat:2|unlocalize }}</td>
 
-        <td class="g-desinstalacion matriz-pct-wrap"><input class="form-control matriz-pct_desinstalacion" type="number" step="any" name="pct_desinstalacion" value="{{ item.pct_desinstalacion }}" form="item-form-{{ item.pk }}"></td>
-        <td class="g-desinstalacion"><input class="form-control matriz-readonly matriz-vu-desinstalacion" readonly tabindex="-1" value="{{ item.valor_unidad_desinstalacion }}"></td>
-        <td class="g-desinstalacion"><input class="form-control matriz-readonly matriz-tot-desinstalacion" readonly tabindex="-1" value="{{ item.total_desinstalacion }}"></td>
+        <td class="g-desinstalacion nx-num">{{ item.pct_desinstalacion|unlocalize }}</td>
+        <td class="g-desinstalacion nx-num matriz-calc">{{ item.valor_unidad_desinstalacion|floatformat:2|unlocalize }}</td>
+        <td class="g-desinstalacion nx-num matriz-calc">{{ item.total_desinstalacion|floatformat:2|unlocalize }}</td>
 
-        <td class="g-ferreteria matriz-pct-wrap"><input class="form-control matriz-pct_ferreteria" type="number" step="any" name="pct_ferreteria" value="{{ item.pct_ferreteria }}" form="item-form-{{ item.pk }}"></td>
-        <td class="g-ferreteria"><input class="form-control matriz-readonly matriz-vu-ferreteria" readonly tabindex="-1" value="{{ item.valor_unidad_ferreteria }}"></td>
-        <td class="g-ferreteria"><input class="form-control matriz-readonly matriz-tot-ferreteria" readonly tabindex="-1" value="{{ item.total_ferreteria }}"></td>
+        <td class="g-ferreteria nx-num">{{ item.pct_ferreteria|unlocalize }}</td>
+        <td class="g-ferreteria nx-num matriz-calc">{{ item.valor_unidad_ferreteria|floatformat:2|unlocalize }}</td>
+        <td class="g-ferreteria nx-num matriz-calc">{{ item.total_ferreteria|floatformat:2|unlocalize }}</td>
 
-        <td class="g-flete matriz-pct-wrap"><input class="form-control matriz-pct_flete" type="number" step="any" name="pct_flete" value="{{ item.pct_flete }}" form="item-form-{{ item.pk }}"></td>
-        <td class="g-flete"><input class="form-control matriz-readonly matriz-vu-flete" readonly tabindex="-1" value="{{ item.valor_unidad_flete }}"></td>
-        <td class="g-flete"><input class="form-control matriz-readonly matriz-tot-flete" readonly tabindex="-1" value="{{ item.total_flete }}"></td>
+        <td class="g-flete nx-num">{{ item.pct_flete|unlocalize }}</td>
+        <td class="g-flete nx-num matriz-calc">{{ item.valor_unidad_flete|floatformat:2|unlocalize }}</td>
+        <td class="g-flete nx-num matriz-calc">{{ item.total_flete|floatformat:2|unlocalize }}</td>
 
-        <td class="g-gg matriz-pct-wrap"><input class="form-control matriz-pct_gg" type="number" step="any" name="pct_gg" value="{{ item.pct_gg }}" form="item-form-{{ item.pk }}"></td>
-        <td class="g-gg"><input class="form-control matriz-readonly matriz-vu-gg" readonly tabindex="-1" value="{{ item.valor_unidad_gg }}"></td>
-        <td class="g-gg"><input class="form-control matriz-readonly matriz-tot-gg" readonly tabindex="-1" value="{{ item.total_gg }}"></td>
+        <td class="g-gg nx-num">{{ item.pct_gg|unlocalize }}</td>
+        <td class="g-gg nx-num matriz-calc">{{ item.valor_unidad_gg|floatformat:2|unlocalize }}</td>
+        <td class="g-gg nx-num matriz-calc">{{ item.total_gg|floatformat:2|unlocalize }}</td>
 
-        <td class="g-utilidad matriz-pct-wrap"><input class="form-control matriz-pct_utilidad" type="number" step="any" name="pct_utilidad" value="{{ item.pct_utilidad }}" form="item-form-{{ item.pk }}"></td>
-        <td class="g-utilidad"><input class="form-control matriz-readonly matriz-vu-utilidad" readonly tabindex="-1" value="{{ item.valor_unidad_utilidad }}"></td>
-        <td class="g-utilidad"><input class="form-control matriz-readonly matriz-tot-utilidad" readonly tabindex="-1" value="{{ item.total_utilidad }}"></td>
+        <td class="g-utilidad nx-num">{{ item.pct_utilidad|unlocalize }}</td>
+        <td class="g-utilidad nx-num matriz-calc">{{ item.valor_unidad_utilidad|floatformat:2|unlocalize }}</td>
+        <td class="g-utilidad nx-num matriz-calc">{{ item.total_utilidad|floatformat:2|unlocalize }}</td>
 
-        <td><input class="form-control matriz-neto_unidad matriz-calc" type="number" step="any" name="neto_unidad" value="{{ item.neto_unidad }}" form="item-form-{{ item.pk }}"{% if item.tipo != 'servicio' %} readonly{% endif %}></td>
-        <td><input class="form-control matriz-readonly matriz-subtotal" readonly tabindex="-1" value="{{ item.subtotal }}"></td>
+        <td class="nx-num matriz-calc"><strong>{{ item.neto_unidad|unlocalize }}</strong></td>
+        <td class="nx-num matriz-calc"><strong>{{ item.subtotal|floatformat:2|unlocalize }}</strong></td>
         <td>
-          <input type="hidden" form="item-form-{{ item.pk }}" name="tipo" value="{{ item.tipo }}" class="matriz-tipo">
-          <input type="hidden" form="item-form-{{ item.pk }}" name="referencia" value="{{ item.referencia }}">
-          <input type="hidden" form="item-form-{{ item.pk }}" name="descripcion" value="{{ item.descripcion }}">
-          <input type="hidden" form="item-form-{{ item.pk }}" name="utilidad_manual" value="{{ item.utilidad_manual }}">
-          <input type="hidden" form="item-form-{{ item.pk }}" name="precio_unitario" value="{{ item.precio_unitario }}">
-          {% if item.incidencia_id %}<input type="hidden" form="item-form-{{ item.pk }}" name="incidencia" value="{{ item.incidencia_id }}">{% endif %}
-          {% if item.visita_mantenimiento_id %}<input type="hidden" form="item-form-{{ item.pk }}" name="visita_mantenimiento_id" value="{{ item.visita_mantenimiento_id }}">{% endif %}
-          <button class="btn btn-primary btn-xs" type="submit" form="item-form-{{ item.pk }}">Guardar</button>
-          <a class="btn btn-default btn-xs" href="{% url 'presupuestos:item_edit' item.pk %}">Editar</a>
+          <a class="btn btn-default btn-xs" href="{% url 'presupuestos:item_edit' item.pk %}" data-nx-modal data-nx-modal-title="Editar ítem">Editar</a>
           <form method="post" action="{% url 'presupuestos:item_delete' item.pk %}" style="display:inline" onsubmit="return confirm('¿Eliminar?')">{% csrf_token %}
             <button class="btn btn-xs btn-danger" type="submit">×</button>
           </form>
@@ -158,47 +148,50 @@
     </tbody>
   </table>
   </div>
-  {% for item in presupuesto.items.all %}
-  <form id="item-form-{{ item.pk }}" method="post" action="{% url 'presupuestos:item_edit' item.pk %}" style="display:none">{% csrf_token %}</form>
-  {% endfor %}
   {% endif %}
 </div>
 
 {% if not is_cliente_view %}
 <div class="x_panel">
-  <div class="x_title"><h2>Gastos</h2>
-    <a class="btn btn-success btn-sm" href="{% url 'presupuestos:gasto_add' presupuesto.proyecto_id %}?presupuesto={{ presupuesto.pk }}">+ Gasto</a>
+  <div class="x_title"><h2>Facturas / boletas</h2>
+    <a class="btn btn-success btn-sm" href="{% url 'presupuestos:factura_add' presupuesto.proyecto_id %}?presupuesto={{ presupuesto.pk }}" data-nx-modal data-nx-modal-title="Nueva factura">+ Factura</a>
     <div class="clearfix"></div>
   </div>
+  <p class="text-muted">Sube la factura/boleta (archivo obligatorio) antes de registrar gastos vinculados.</p>
   <table class="table table-striped">
-    <thead><tr><th>Fecha</th><th>Descripción</th><th>Monto</th></tr></thead>
+    <thead><tr><th>Tipo</th><th>Número</th><th>Fecha</th><th>Total</th><th>Gastos vinculados</th><th>Saldo</th><th>Archivo</th></tr></thead>
     <tbody>
-    {% for g in presupuesto.gastos.all %}
-      <tr><td>{{ g.fecha|date:"d/m/Y" }}</td><td>{{ g.descripcion }}</td><td>{{ g.monto }}</td></tr>
-    {% empty %}<tr><td colspan="3">Sin gastos</td></tr>{% endfor %}
+    {% for f in presupuesto.facturas.all %}
+      <tr {% if f.suma_gastos > f.total %}class="danger"{% endif %}>
+        <td>{{ f.get_tipo_display }}</td>
+        <td>{{ f.numero }}</td>
+        <td>{{ f.fecha|date:"d/m/Y" }}</td>
+        <td>${{ f.total|floatformat:0 }}</td>
+        <td>${{ f.suma_gastos|floatformat:0 }}</td>
+        <td>{% if f.saldo_disponible < 0 %}<span class="text-danger"><strong>${{ f.saldo_disponible|floatformat:0 }}</strong></span>{% else %}${{ f.saldo_disponible|floatformat:0 }}{% endif %}</td>
+        <td>{% if f.archivo %}<a href="{{ f.archivo.url }}" target="_blank">Descargar</a>{% else %}<span class="text-danger">Sin archivo</span>{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="7">Sin facturas</td></tr>{% endfor %}
     </tbody>
   </table>
 </div>
 
 <div class="x_panel">
-  <div class="x_title"><h2>Facturas / boletas</h2>
-    <a class="btn btn-success btn-sm" href="{% url 'presupuestos:factura_add' presupuesto.proyecto_id %}?presupuesto={{ presupuesto.pk }}">+ Factura</a>
+  <div class="x_title"><h2>Gastos</h2>
+    <a class="btn btn-success btn-sm" href="{% url 'presupuestos:gasto_add' presupuesto.proyecto_id %}?presupuesto={{ presupuesto.pk }}" data-nx-modal data-nx-modal-title="Nuevo gasto">+ Gasto</a>
     <div class="clearfix"></div>
   </div>
   <table class="table table-striped">
-    <thead><tr><th>Tipo</th><th>Número</th><th>Fecha</th><th>Neto</th><th>IVA</th><th>Total</th><th>Archivo</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Descripción</th><th>Factura / boleta</th><th>Monto</th></tr></thead>
     <tbody>
-    {% for f in presupuesto.facturas.all %}
+    {% for g in presupuesto.gastos.all %}
       <tr>
-        <td>{{ f.get_tipo_display }}</td>
-        <td>{{ f.numero }}</td>
-        <td>{{ f.fecha|date:"d/m/Y" }}</td>
-        <td>{{ f.monto_neto }}</td>
-        <td>{{ f.monto_iva }}</td>
-        <td>{{ f.total }}</td>
-        <td>{% if f.archivo %}<a href="{{ f.archivo.url }}" target="_blank">Descargar</a>{% else %}—{% endif %}</td>
+        <td>{{ g.fecha|date:"d/m/Y" }}</td>
+        <td>{{ g.descripcion }}</td>
+        <td>{% if g.factura %}{{ g.factura.get_tipo_display }} {{ g.factura.numero }}{% else %}<span class="text-danger">Sin vínculo</span>{% endif %}</td>
+        <td>${{ g.monto|floatformat:0 }}</td>
       </tr>
-    {% empty %}<tr><td colspan="7">Sin facturas</td></tr>{% endfor %}
+    {% empty %}<tr><td colspan="4">Sin gastos</td></tr>{% endfor %}
     </tbody>
   </table>
 </div>
@@ -206,7 +199,6 @@
 {% endblock %}
 {% block javascripts %}
 {% if not is_cliente_view %}
-<script src="{% static 'js/matriz_costos.js' %}"></script>
 <script>
 document.querySelectorAll('.matriz-toggle').forEach(function(btn){
   btn.addEventListener('click', function(){

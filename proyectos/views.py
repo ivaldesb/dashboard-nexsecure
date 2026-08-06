@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.permissions import require_admin
+from core.modal import modal_form, modal_success
 from core.pdf import render_proyecto_reporte_pdf
 from presupuestos.models import Presupuesto
 from proyectos.models import (
@@ -113,8 +114,14 @@ def create(request):
             detalle='Proyecto creado',
         )
         messages.success(request, 'Proyecto creado.')
-        return redirect('proyectos:detail', pk=proyecto.pk)
-    return render(request, 'proyectos/form.html', {'form': form, 'title': 'Nuevo proyecto'})
+        return modal_success(request, reverse('proyectos:list'))
+    return modal_form(
+        request,
+        title='Nuevo proyecto',
+        form=form,
+        action_url=reverse('proyectos:create'),
+        extra={'cancel_url': reverse('proyectos:list')},
+    )
 
 
 @require_http_methods(['GET', 'POST'])
@@ -124,11 +131,13 @@ def edit(request, pk):
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Proyecto actualizado.')
-        return redirect('proyectos:detail', pk=pk)
-    return render(
+        return modal_success(request, reverse('proyectos:detail', args=[pk]))
+    return modal_form(
         request,
-        'proyectos/form.html',
-        {'form': form, 'title': 'Editar proyecto', 'proyecto': proyecto, 'can_delete': _can_delete_proyecto(request.user, proyecto)},
+        title='Editar proyecto',
+        form=form,
+        action_url=reverse('proyectos:edit', args=[pk]),
+        extra={'cancel_url': reverse('proyectos:detail', args=[pk]), 'proyecto': proyecto},
     )
 
 
@@ -148,6 +157,17 @@ def detail(request, pk):
     if tab not in TABS:
         tab = 'resumen'
 
+    is_cliente = _is_cliente_viewer(request.user)
+    ultimo_enviado = (
+        proyecto.presupuestos.filter(estado=Presupuesto.ENVIADO)
+        .prefetch_related('items')
+        .order_by('-updated_at', '-pk')
+        .first()
+    )
+    ultimo_ppto = (
+        proyecto.presupuestos.prefetch_related('items').order_by('-updated_at', '-pk').first()
+    )
+
     ctx = {
         'proyecto': proyecto,
         'tab': tab,
@@ -155,6 +175,9 @@ def detail(request, pk):
         'can_delete': _can_delete_proyecto(request.user, proyecto),
         'comentarios': proyecto.comentarios.select_related('autor').all(),
         'comentario_form_url': reverse('proyectos:add_comentario', args=[proyecto.pk]),
+        'is_cliente_view': is_cliente,
+        'ultimo_presupuesto_enviado': ultimo_enviado,
+        'ultimo_presupuesto': ultimo_ppto,
     }
     if _can_config_timeline(request.user, proyecto):
         ctx['timeline_config_url'] = reverse('proyectos:timeline_config', args=[proyecto.pk])
@@ -251,8 +274,14 @@ def estado_create(request):
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Estado creado.')
-        return redirect('proyectos:estado_list')
-    return render(request, 'proyectos/estado_form.html', {'form': form, 'title': 'Nuevo estado'})
+        return modal_success(request, reverse('proyectos:estado_list'))
+    return modal_form(
+        request,
+        title='Nuevo estado',
+        form=form,
+        action_url=reverse('proyectos:estado_create'),
+        extra={'cancel_url': reverse('proyectos:estado_list')},
+    )
 
 
 @require_admin

@@ -1,3 +1,5 @@
+from django import forms
+from django.db.models import Q
 from django.forms import ModelForm
 
 from presupuestos.models import FacturaBoleta, Gasto, Presupuesto, PresupuestoItem
@@ -71,7 +73,11 @@ class PresupuestoItemForm(ModelForm):
             'utilidad_manual',
             'neto_unidad',
             'cantidad',
+            'precio_unitario',
         ):
+            # es-cl usa coma; <input type="number"> exige punto → sin localizar
+            self.fields[name].localize = False
+            self.fields[name].widget.is_localized = False
             self.fields[name].widget.attrs.setdefault('step', 'any')
             self.fields[name].widget.attrs['class'] = (
                 self.fields[name].widget.attrs.get('class', '') + f' matriz-input matriz-{name}'
@@ -105,11 +111,47 @@ class PresupuestoItemForm(ModelForm):
 class GastoForm(ModelForm):
     class Meta:
         model = Gasto
-        fields = ['descripcion', 'monto', 'fecha']
+        fields = ['factura', 'descripcion', 'monto', 'fecha']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, proyecto=None, presupuesto=None, **kwargs):
         super().__init__(*args, **kwargs)
         _fc(self)
+        self.fields['monto'].localize = False
+        self.fields['monto'].widget.is_localized = False
+        self.fields['monto'].widget.attrs.setdefault('step', 'any')
+        self.fields['factura'].required = True
+        self.fields['factura'].label = 'Factura / boleta'
+        self.fields['factura'].empty_label = 'Selecciona factura o boleta…'
+        exclude_pk = getattr(self.instance, 'pk', None)
+        qs = FacturaBoleta.objects.none()
+        if proyecto is not None:
+            qs = FacturaBoleta.objects.filter(proyecto=proyecto).order_by('-fecha', '-pk')
+            if presupuesto is not None:
+                qs = qs.filter(Q(presupuesto=presupuesto) | Q(presupuesto__isnull=True)).distinct()
+        self.fields['factura'].queryset = qs
+
+        def _label(f):
+            saldo = f.saldo_disponible(exclude_gasto_pk=exclude_pk)
+            return f'{f} — total ${f.total:,.0f} / disponible ${saldo:,.0f}'
+
+        self.fields['factura'].label_from_instance = _label
+
+    def clean(self):
+        cleaned = super().clean()
+        factura = cleaned.get('factura')
+        monto = cleaned.get('monto')
+        if factura is None or monto is None:
+            return cleaned
+        exclude_pk = self.instance.pk if self.instance and self.instance.pk else None
+        usados = factura.suma_gastos(exclude_pk=exclude_pk)
+        total = factura.total
+        if usados + monto > total:
+            raise forms.ValidationError(
+                f'La suma de gastos vinculados (${usados + monto:,.2f}) supera el total '
+                f'de la {factura.get_tipo_display().lower()} {factura.numero} (${total:,.2f}). '
+                f'Saldo disponible: ${total - usados:,.2f}.'
+            )
+        return cleaned
 
 
 class FacturaForm(ModelForm):
@@ -120,3 +162,11 @@ class FacturaForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         _fc(self)
+        self.fields['archivo'].required = True
+        self.fields['archivo'].help_text = 'Obligatorio: adjunta el PDF o imagen de la factura/boleta.'
+        for name in ('monto_neto', 'monto_iva'):
+            self.fields[name].localize = False
+            self.fields[name].widget.is_localized = False
+            self.fields[name].widget.attrs.setdefault('step', 'any')
+        if self.instance and self.instance.pk and self.instance.archivo:
+            self.fields['archivo'].required = False

@@ -65,11 +65,14 @@
       </footer>
     </div>
   </div>
+  {% include "includes/nx_modal.html" %}
   <script src="{% static 'vendors/jquery/dist/jquery.min.js' %}"></script>
   <script src="{% static 'vendors/bootstrap/dist/js/bootstrap.min.js' %}"></script>
   <script src="{% static 'vendors/fastclick/lib/fastclick.js' %}"></script>
   <script src="{% static 'vendors/nprogress/nprogress.js' %}"></script>
   <script src="{% static 'build/js/custom.min.js' %}"></script>
+  <script src="{% static 'js/matriz_costos.js' %}"></script>
+  <script src="{% static 'js/nx-modal.js' %}"></script>
   {% block javascripts %}{% endblock %}
 </body>
 </html>

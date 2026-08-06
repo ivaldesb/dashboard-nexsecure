@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-title">
   <div class="title_left"><h3>Proyectos</h3></div>
-  <div class="title_right"><a class="btn btn-primary" href="{% url 'proyectos:create' %}">Nuevo proyecto</a></div>
+  <div class="title_right"><a class="btn btn-primary" href="{% url 'proyectos:create' %}" data-nx-modal data-nx-modal-title="Nuevo proyecto">Nuevo proyecto</a></div>
 </div>
 <p class="nx-page-sub">Gestión del núcleo operativo. El detalle se abre en una pestaña nueva.</p>
 <div class="x_panel">
@@ -28,7 +28,7 @@
         <td>{{ p.updated_at|date:"d/m/Y H:i" }}</td>
         <td class="text-right">
           <a class="btn btn-default btn-xs" href="{% url 'proyectos:detail' p.pk %}" target="_blank">Ver</a>
-          <a class="btn btn-default btn-xs" href="{% url 'proyectos:edit' p.pk %}">Editar</a>
+          <a class="btn btn-default btn-xs" href="{% url 'proyectos:edit' p.pk %}" data-nx-modal data-nx-modal-title="Editar proyecto">Editar</a>
         </td>
       </tr>
     {% empty %}

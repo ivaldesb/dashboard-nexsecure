@@ -5,10 +5,12 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import Permission
 from django.forms import ModelForm, CheckboxSelectMultiple, ModelMultipleChoiceField
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.models import Role, User
 from accounts.permissions import require_admin
+from core.modal import modal_form, modal_success
 
 
 class UserForm(ModelForm):
@@ -64,7 +66,8 @@ def user_list(request):
 @require_http_methods(['GET', 'POST'])
 def user_create(request):
     form = StaffUserCreateForm(request.POST or None)
-    role_form_extra = UserForm(request.POST or None)
+    for field in form.fields.values():
+        field.widget.attrs.setdefault('class', 'form-control')
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         roles = request.POST.getlist('roles')
@@ -75,11 +78,17 @@ def user_create(request):
             user.tag = tag
             user.save(update_fields=['tag'])
         messages.success(request, 'Usuario creado.')
-        return redirect('accounts:user_list')
-    return render(
+        return modal_success(request, reverse('accounts:user_list'))
+    return modal_form(
         request,
-        'accounts/user_form.html',
-        {'form': form, 'roles': Role.objects.all(), 'title': 'Crear usuario'},
+        title='Crear usuario',
+        form=form,
+        action_url=reverse('accounts:user_create'),
+        extra={
+            'cancel_url': reverse('accounts:user_list'),
+            'roles': Role.objects.all(),
+            'form_body_template': 'accounts/user_create_body.html',
+        },
     )
 
 
@@ -123,11 +132,20 @@ def role_list(request):
 @require_http_methods(['GET', 'POST'])
 def role_create(request):
     form = RoleForm(request.POST or None)
+    for name, field in form.fields.items():
+        if name != 'permissions' and hasattr(field.widget, 'attrs'):
+            field.widget.attrs.setdefault('class', 'form-control')
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Rol creado.')
-        return redirect('accounts:role_list')
-    return render(request, 'accounts/role_form.html', {'form': form, 'title': 'Crear rol'})
+        return modal_success(request, reverse('accounts:role_list'))
+    return modal_form(
+        request,
+        title='Crear rol',
+        form=form,
+        action_url=reverse('accounts:role_create'),
+        extra={'cancel_url': reverse('accounts:role_list')},
+    )
 
 
 @require_admin

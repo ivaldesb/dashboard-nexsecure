@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-title">
   <div class="title_left"><h3>Clientes</h3></div>
-  <div class="title_right"><a class="btn btn-primary" href="{% url 'clientes:create' %}">Nuevo cliente</a></div>
+  <div class="title_right"><a class="btn btn-primary" href="{% url 'clientes:create' %}" data-nx-modal data-nx-modal-title="Nuevo cliente">Nuevo cliente</a></div>
 </div>
 <p class="nx-page-sub">Contacto, facturación y vínculo a usuario del portal.</p>
 <div class="x_panel">
@@ -21,7 +21,7 @@
         <td>{{ c.user.username|default:"—" }}</td>
         <td>{% if c.activo %}<span class="label label-info">Activo</span>{% else %}<span class="label label-default">Inactivo</span>{% endif %}</td>
         <td class="text-right">
-          <a class="btn btn-default btn-xs" href="{% url 'clientes:edit' c.pk %}">Editar</a>
+          <a class="btn btn-default btn-xs" href="{% url 'clientes:edit' c.pk %}" data-nx-modal data-nx-modal-title="Editar cliente">Editar</a>
           <form style="display:inline" method="post" action="{% url 'clientes:toggle' c.pk %}">{% csrf_token %}
             <button class="btn btn-xs btn-warning" type="submit">Activar/Desactivar</button>
           </form>

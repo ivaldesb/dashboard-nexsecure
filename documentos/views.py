@@ -5,8 +5,10 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
+from core.modal import modal_form, modal_success
 from documentos.forms import DocumentoAclForm, DocumentoUploadForm
 from documentos.models import Documento, DocumentoAudit
 from proyectos.models import Proyecto, TimelineEvent
@@ -34,6 +36,7 @@ def upload(request, proyecto_id):
     proyecto = get_object_or_404(Proyecto, pk=proyecto_id)
     _proyecto_accesible(request.user, proyecto)
     form = DocumentoUploadForm(request.POST or None, request.FILES or None)
+    success_url = reverse('proyectos:detail', args=[proyecto.pk]) + '?tab=documentos'
     if request.method == 'POST' and form.is_valid():
         doc = form.save(commit=False)
         doc.proyecto = proyecto
@@ -51,8 +54,15 @@ def upload(request, proyecto_id):
             detalle='Subido',
         )
         messages.success(request, 'Documento subido.')
-        return redirect('proyectos:detail', pk=proyecto.pk)
-    return render(request, 'documentos/upload_form.html', {'form': form, 'proyecto': proyecto})
+        return modal_success(request, success_url)
+    return modal_form(
+        request,
+        title='Subir documento',
+        form=form,
+        action_url=reverse('documentos:upload', args=[proyecto.pk]),
+        multipart=True,
+        extra={'cancel_url': success_url, 'proyecto': proyecto},
+    )
 
 
 def view_doc(request, pk):

@@ -1,4 +1,4 @@
-<p><a class="btn btn-primary btn-sm" href="{% url 'activos:create' %}?proyecto={{ proyecto.pk }}">Nuevo activo</a></p>
+<p><a class="btn btn-primary btn-sm" href="{% url 'activos:create' %}?proyecto={{ proyecto.pk }}" data-nx-modal data-nx-modal-title="Nuevo activo">Nuevo activo</a></p>
 <table class="table table-striped">
   <thead><tr><th>Nombre</th><th>Categoría</th><th>S/N</th><th>Ubicación</th><th>IP/Dominio</th><th></th></tr></thead>
   <tbody>
@@ -9,7 +9,7 @@
       <td>{{ a.sn|default:"—" }}</td>
       <td>{% firstof a.ubicacion "—" %}</td>
       <td>{% firstof a.ip_dominio a.ip "—" %}</td>
-      <td><a href="{% url 'activos:edit' a.pk %}">Editar</a></td>
+      <td><a href="{% url 'activos:edit' a.pk %}" data-nx-modal data-nx-modal-title="Editar activo">Editar</a></td>
     </tr>
   {% empty %}<tr><td colspan="6">Sin activos</td></tr>{% endfor %}
   </tbody>

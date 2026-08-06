@@ -3,14 +3,17 @@ import io
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
+from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 from openpyxl import load_workbook
 
 from accounts.permissions import require_admin
+from core.modal import modal_form, modal_success
 from finanzas.models import CuentaBancaria, DocumentoSII, MovimientoCuenta, PeriodoTributario
 from presupuestos.models import FacturaBoleta
 
@@ -167,6 +170,8 @@ def documentos_sii(request):
 @require_admin
 @require_http_methods(['GET', 'POST'])
 def documento_sii_upload(request):
+    list_url = reverse('finanzas:sii_list')
+    form = forms.Form()  # ponytail: body HTML en template; sin ModelForm
     if request.method == 'POST':
         titulo = (request.POST.get('titulo') or '').strip()
         periodo_raw = request.POST.get('periodo')
@@ -180,7 +185,17 @@ def documento_sii_upload(request):
                 periodo = date(p.year, p.month, 1)
             except ValueError:
                 messages.error(request, 'Fecha de período no válida.')
-                return render(request, 'finanzas/sii_form.html')
+                return modal_form(
+                    request,
+                    title='Subir documento SII',
+                    form=form,
+                    action_url=reverse('finanzas:sii_upload'),
+                    multipart=True,
+                    extra={
+                        'cancel_url': list_url,
+                        'form_body_template': 'finanzas/sii_form_body.html',
+                    },
+                )
             DocumentoSII.objects.create(
                 titulo=titulo,
                 periodo=periodo,
@@ -189,8 +204,18 @@ def documento_sii_upload(request):
                 uploaded_by=request.user,
             )
             messages.success(request, 'Documento SII subido.')
-            return redirect('finanzas:sii_list')
-    return render(request, 'finanzas/sii_form.html')
+            return modal_success(request, list_url)
+    return modal_form(
+        request,
+        title='Subir documento SII',
+        form=form,
+        action_url=reverse('finanzas:sii_upload'),
+        multipart=True,
+        extra={
+            'cancel_url': list_url,
+            'form_body_template': 'finanzas/sii_form_body.html',
+        },
+    )
 
 
 @require_admin
@@ -215,6 +240,22 @@ def movimientos_list(request):
 @require_admin
 @require_http_methods(['GET', 'POST'])
 def movimiento_create(request):
+    list_url = reverse('finanzas:movimientos_list')
+    form = forms.Form()  # ponytail: body HTML en template; sin ModelForm
+    action_url = reverse('finanzas:movimiento_create')
+
+    def _modal():
+        return modal_form(
+            request,
+            title='Nuevo movimiento',
+            form=form,
+            action_url=action_url,
+            extra=_form_context(
+                cancel_url=list_url,
+                form_body_template='finanzas/movimiento_form_body.html',
+            ),
+        )
+
     if request.method == 'POST':
         fecha_raw = request.POST.get('fecha')
         tipo = request.POST.get('tipo')
@@ -224,10 +265,10 @@ def movimiento_create(request):
             monto = Decimal(monto_raw)
         except (ValueError, TypeError, InvalidOperation):
             messages.error(request, 'Datos no válidos.')
-            return render(request, 'finanzas/movimiento_form.html', _form_context())
+            return _modal()
         if tipo not in (MovimientoCuenta.CARGO, MovimientoCuenta.ABONO):
             messages.error(request, 'Tipo no válido.')
-            return render(request, 'finanzas/movimiento_form.html', _form_context())
+            return _modal()
 
         cuenta_bancaria = None
         cb_id = (request.POST.get('cuenta_bancaria') or '').strip()
@@ -256,8 +297,8 @@ def movimiento_create(request):
             referencia=(request.POST.get('referencia') or '').strip(),
         )
         messages.success(request, 'Movimiento registrado.')
-        return redirect('finanzas:movimientos_list')
-    return render(request, 'finanzas/movimiento_form.html', _form_context())
+        return modal_success(request, list_url)
+    return _modal()
 
 
 @require_admin

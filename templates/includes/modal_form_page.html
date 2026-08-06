@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-title"><div class="title_left"><h3>{{ title }}</h3></div></div>
+<p class="nx-page-sub">Puedes usar el modal desde el listado; esta vista queda como respaldo.</p>
+<div class="x_panel">
+  {% include "includes/modal_form.html" %}
+</div>
+{% endblock %}
+{% block javascripts %}
+{% if include_matriz_js %}
+{% load static %}
+<script src="{% static 'js/matriz_costos.js' %}"></script>
+{% endif %}
+{% endblock %}

@@ -2,9 +2,11 @@ from django.contrib import messages
 from django.core.exceptions import FieldDoesNotExist
 from django.forms import ModelForm
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
 from clientes.models import Cliente
+from core.modal import modal_form, modal_success
 from presupuestos.models import Presupuesto
 from proyectos.models import EstadoProyecto
 
@@ -97,8 +99,14 @@ def create(request):
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Cliente creado.')
-        return redirect('clientes:list')
-    return render(request, 'clientes/form.html', {'form': form, 'title': 'Nuevo cliente'})
+        return modal_success(request, reverse('clientes:list'))
+    return modal_form(
+        request,
+        title='Nuevo cliente',
+        form=form,
+        action_url=reverse('clientes:create'),
+        extra={'cancel_url': reverse('clientes:list')},
+    )
 
 
 @require_http_methods(['GET', 'POST'])
@@ -111,8 +119,14 @@ def edit(request, pk):
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Cliente actualizado.')
-        return redirect('clientes:list')
-    return render(request, 'clientes/form.html', {'form': form, 'title': 'Editar cliente', 'cliente': cliente})
+        return modal_success(request, reverse('clientes:list'))
+    return modal_form(
+        request,
+        title='Editar cliente',
+        form=form,
+        action_url=reverse('clientes:edit', args=[pk]),
+        extra={'cancel_url': reverse('clientes:list'), 'cliente': cliente},
+    )
 
 
 @require_POST

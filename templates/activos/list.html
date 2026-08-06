@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-title">
   <div class="title_left"><h3>Activos</h3></div>
-  <div class="title_right"><a class="btn btn-primary" href="{% url 'activos:create' %}">Nuevo activo</a></div>
+  <div class="title_right"><a class="btn btn-primary" href="{% url 'activos:create' %}" data-nx-modal data-nx-modal-title="Nuevo activo">Nuevo activo</a></div>
 </div>
 <div class="clearfix"></div>
 
@@ -51,7 +51,7 @@
         <td>{{ a.tecnico.username|default:"—" }}</td>
         <td>{% if a.incidencias_activas is not None %}{{ a.incidencias_activas }}{% else %}—{% endif %}</td>
         <td>
-          <a href="{% url 'activos:edit' a.pk %}">Editar</a>
+          <a href="{% url 'activos:edit' a.pk %}" data-nx-modal data-nx-modal-title="Editar activo">Editar</a>
           <form style="display:inline" method="post" action="{% url 'activos:delete' a.pk %}">{% csrf_token %}
             <button class="btn btn-xs btn-danger" onclick="return confirm('¿Eliminar activo?')">Eliminar</button>
           </form>

@@ -2,10 +2,12 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
 from activos.forms import ActivoForm
 from activos.models import Activo
+from core.modal import modal_form, modal_success
 from proyectos.models import TimelineEvent, proyectos_visibles_para
 
 _ESTADOS_ABIERTOS = ('abierta', 'en_progreso')
@@ -50,7 +52,14 @@ def list_activos(request):
 
 @require_http_methods(['GET', 'POST'])
 def create(request):
-    form = ActivoForm(request.POST or None, request.FILES or None, user=request.user)
+    initial = {}
+    proyecto_id = request.GET.get('proyecto')
+    if proyecto_id:
+        initial['proyecto'] = proyecto_id
+    form = ActivoForm(request.POST or None, request.FILES or None, user=request.user, initial=initial)
+    action_url = reverse('activos:create')
+    if proyecto_id:
+        action_url += f'?proyecto={proyecto_id}'
     if request.method == 'POST' and form.is_valid():
         activo = form.save(commit=False)
         activo.creado_por = request.user
@@ -59,8 +68,15 @@ def create(request):
         activo.save()
         _timeline_activo(activo.proyecto, request.user, activo, 'Creado')
         messages.success(request, 'Activo creado.')
-        return redirect('activos:list')
-    return render(request, 'activos/form.html', {'form': form, 'title': 'Nuevo activo'})
+        return modal_success(request, reverse('activos:list'))
+    return modal_form(
+        request,
+        title='Nuevo activo',
+        form=form,
+        action_url=action_url,
+        multipart=True,
+        extra={'cancel_url': reverse('activos:list')},
+    )
 
 
 @require_http_methods(['GET', 'POST'])
@@ -73,8 +89,15 @@ def edit(request, pk):
         activo = form.save()
         _timeline_activo(activo.proyecto, request.user, activo, 'Actualizado')
         messages.success(request, 'Activo actualizado.')
-        return redirect('activos:list')
-    return render(request, 'activos/form.html', {'form': form, 'title': 'Editar activo', 'activo': activo})
+        return modal_success(request, reverse('activos:list'))
+    return modal_form(
+        request,
+        title='Editar activo',
+        form=form,
+        action_url=reverse('activos:edit', args=[pk]),
+        multipart=True,
+        extra={'cancel_url': reverse('activos:list'), 'activo': activo},
+    )
 
 
 @require_POST

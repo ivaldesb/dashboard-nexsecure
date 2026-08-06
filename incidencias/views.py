@@ -1,8 +1,10 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
+from core.modal import modal_form, modal_success
 from incidencias.forms import FotoUploadForm, IncidenciaForm
 from incidencias.models import ComentarioIncidencia, FotoIncidencia, Incidencia
 from proyectos.models import Proyecto, TimelineEvent, proyectos_visibles_para
@@ -33,6 +35,7 @@ def create(request, proyecto_id):
     if not proyecto.user_has_access(request.user):
         raise PermissionDenied
     form = IncidenciaForm(request.POST or None, proyecto=proyecto)
+    success_url = reverse('proyectos:detail', args=[proyecto.pk]) + '?tab=incidencias'
     if request.method == 'POST' and form.is_valid():
         incidencia = form.save(commit=False)
         incidencia.proyecto = proyecto
@@ -49,8 +52,19 @@ def create(request, proyecto_id):
             detalle='Abierta',
         )
         messages.success(request, 'Incidencia creada.')
-        return redirect('incidencias:detail', pk=incidencia.pk)
-    return render(request, 'incidencias/form.html', {'form': form, 'proyecto': proyecto, 'title': 'Nueva incidencia'})
+        return modal_success(request, success_url)
+    return modal_form(
+        request,
+        title='Nueva incidencia',
+        form=form,
+        action_url=reverse('incidencias:create', args=[proyecto.pk]),
+        multipart=True,
+        extra={
+            'cancel_url': success_url,
+            'proyecto': proyecto,
+            'form_body_template': 'incidencias/form_body.html',
+        },
+    )
 
 
 @require_http_methods(['GET', 'POST'])

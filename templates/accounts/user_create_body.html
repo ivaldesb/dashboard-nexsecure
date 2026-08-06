@@ -1,0 +1,14 @@
+{% for field in form %}
+  <div class="form-group">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field.errors }}
+    {{ field }}
+    {% if field.help_text %}<p class="help-block">{{ field.help_text }}</p>{% endif %}
+  </div>
+{% endfor %}
+<div class="form-group">
+  <label>Roles</label>
+  {% for r in roles %}
+    <div class="checkbox"><label><input type="checkbox" name="roles" value="{{ r.pk }}"> {{ r.name }}</label></div>
+  {% endfor %}
+</div>
