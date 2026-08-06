@@ -1232,3 +1232,13 @@ body.nx-app .nx-m2m-empty {
   margin: 0;
   font-size: 13px;
 }
+
+body.nx-app .nx-select-search-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+body.nx-app .nx-select-search-wrap .nx-select-filter {
+  margin: 0;
+}

@@ -27,11 +27,21 @@ def _timeline_activo(proyecto, user, activo, accion):
     )
 
 
+def _success_url(request, activo):
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url and next_url.startswith('/'):
+        return next_url
+    proyecto_id = request.GET.get('proyecto') or (activo.proyecto_id if activo else None)
+    if proyecto_id:
+        return reverse('proyectos:detail', args=[proyecto_id]) + '?tab=activos'
+    return reverse('activos:list')
+
+
 def list_activos(request):
     proyectos = proyectos_visibles_para(request.user)
     qs = (
         Activo.objects.filter(proyecto__in=proyectos)
-        .select_related('proyecto', 'categoria', 'tecnico')
+        .select_related('proyecto', 'categoria', 'tecnico', 'factura')
         .annotate(
             incidencias_activas=Count(
                 'proyecto__incidencias',
@@ -68,14 +78,14 @@ def create(request):
         activo.save()
         _timeline_activo(activo.proyecto, request.user, activo, 'Creado')
         messages.success(request, 'Activo creado.')
-        return modal_success(request, reverse('activos:list'))
+        return modal_success(request, _success_url(request, activo))
     return modal_form(
         request,
         title='Nuevo activo',
         form=form,
         action_url=action_url,
         multipart=True,
-        extra={'cancel_url': reverse('activos:list')},
+        extra={'cancel_url': _success_url(request, None) if proyecto_id else reverse('activos:list')},
     )
 
 
@@ -89,14 +99,17 @@ def edit(request, pk):
         activo = form.save()
         _timeline_activo(activo.proyecto, request.user, activo, 'Actualizado')
         messages.success(request, 'Activo actualizado.')
-        return modal_success(request, reverse('activos:list'))
+        return modal_success(request, _success_url(request, activo))
     return modal_form(
         request,
         title='Editar activo',
         form=form,
         action_url=reverse('activos:edit', args=[pk]),
         multipart=True,
-        extra={'cancel_url': reverse('activos:list'), 'activo': activo},
+        extra={
+            'cancel_url': reverse('proyectos:detail', args=[activo.proyecto_id]) + '?tab=activos',
+            'activo': activo,
+        },
     )
 
 
@@ -107,4 +120,7 @@ def delete(request, pk):
         raise PermissionDenied
     activo.delete()
     messages.success(request, 'Activo eliminado.')
+    next_url = request.POST.get('next')
+    if next_url and next_url.startswith('/'):
+        return redirect(next_url)
     return redirect('activos:list')

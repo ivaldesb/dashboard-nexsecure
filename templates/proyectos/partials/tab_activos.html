@@ -1,6 +1,6 @@
 <p><a class="btn btn-primary btn-sm" href="{% url 'activos:create' %}?proyecto={{ proyecto.pk }}" data-nx-modal data-nx-modal-title="Nuevo activo">Nuevo activo</a></p>
 <table class="table table-striped">
-  <thead><tr><th>Nombre</th><th>Categoría</th><th>S/N</th><th>Ubicación</th><th>IP/Dominio</th><th></th></tr></thead>
+  <thead><tr><th>Nombre</th><th>Categoría</th><th>S/N</th><th>Ubicación</th><th>IP / dominio</th><th>Factura</th><th></th></tr></thead>
   <tbody>
   {% for a in activos %}
     <tr>
@@ -8,9 +8,10 @@
       <td>{% if a.categoria %}{{ a.categoria }}{% else %}—{% endif %}</td>
       <td>{{ a.sn|default:"—" }}</td>
       <td>{% firstof a.ubicacion "—" %}</td>
-      <td>{% firstof a.ip_dominio a.ip "—" %}</td>
+      <td>{{ a.ip_dominio|default:"—" }}</td>
+      <td>{% if a.factura %}{{ a.factura.get_tipo_display }} {{ a.factura.numero }}{% else %}—{% endif %}</td>
       <td><a href="{% url 'activos:edit' a.pk %}" data-nx-modal data-nx-modal-title="Editar activo">Editar</a></td>
     </tr>
-  {% empty %}<tr><td colspan="6">Sin activos</td></tr>{% endfor %}
+  {% empty %}<tr><td colspan="7">Sin activos</td></tr>{% endfor %}
   </tbody>
 </table>

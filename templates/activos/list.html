@@ -36,7 +36,7 @@
     <thead>
       <tr>
         <th>Nombre</th><th>Categoría</th><th>Proyecto</th><th>S/N</th>
-        <th>Ubicación</th><th>IP</th><th>Técnico</th><th>Incidencias</th><th></th>
+        <th>Ubicación</th><th>IP / dominio</th><th>Factura</th><th>Técnico</th><th>Incidencias</th><th></th>
       </tr>
     </thead>
     <tbody>
@@ -47,7 +47,8 @@
         <td>{{ a.proyecto.nombre }}</td>
         <td>{{ a.sn|default:"—" }}</td>
         <td>{{ a.ubicacion|default:"—" }}</td>
-        <td>{% if a.ip_dominio %}{{ a.ip_dominio }}{% elif a.ip %}{{ a.ip }}{% else %}—{% endif %}</td>
+        <td>{{ a.ip_dominio|default:"—" }}</td>
+        <td>{% if a.factura %}{{ a.factura.get_tipo_display }} {{ a.factura.numero }}{% else %}—{% endif %}</td>
         <td>{{ a.tecnico.username|default:"—" }}</td>
         <td>{% if a.incidencias_activas is not None %}{{ a.incidencias_activas }}{% else %}—{% endif %}</td>
         <td>
@@ -58,7 +59,7 @@
         </td>
       </tr>
     {% empty %}
-      <tr><td colspan="9">Sin activos</td></tr>
+      <tr><td colspan="10">Sin activos</td></tr>
     {% endfor %}
     </tbody>
   </table>

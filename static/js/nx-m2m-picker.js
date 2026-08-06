@@ -112,9 +112,49 @@
     render();
   }
 
+  function enhanceSearchSelect(select) {
+    if (select.dataset.nxSearchReady === '1') return;
+    if (select.multiple) return;
+    select.dataset.nxSearchReady = '1';
+    var wrap = document.createElement('div');
+    wrap.className = 'nx-select-search-wrap';
+    var filter = document.createElement('input');
+    filter.type = 'search';
+    filter.className = 'form-control nx-select-filter';
+    filter.placeholder = select.getAttribute('data-placeholder') || 'Filtrar opciones…';
+    filter.autocomplete = 'off';
+    select.parentNode.insertBefore(wrap, select);
+    wrap.appendChild(filter);
+    wrap.appendChild(select);
+
+    var all = Array.prototype.map.call(select.options, function (o) {
+      return { value: o.value, text: o.text, selected: o.selected, disabled: o.disabled };
+    });
+
+    function apply() {
+      var q = (filter.value || '').trim().toLowerCase();
+      var current = select.value;
+      select.innerHTML = '';
+      all.forEach(function (o) {
+        if (o.value && q && o.text.toLowerCase().indexOf(q) === -1 && o.value !== current) {
+          return;
+        }
+        var opt = document.createElement('option');
+        opt.value = o.value;
+        opt.textContent = o.text;
+        opt.disabled = o.disabled;
+        if (o.value === current) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    filter.addEventListener('input', apply);
+  }
+
   function init(root) {
     var scope = root || document;
     scope.querySelectorAll('select.nx-m2m-picker').forEach(buildPicker);
+    scope.querySelectorAll('select.nx-select-search').forEach(enhanceSearchSelect);
   }
 
   window.nxInitSelect2 = init; // alias para nx-modal.js

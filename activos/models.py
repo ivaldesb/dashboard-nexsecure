@@ -22,7 +22,6 @@ class Activo(models.Model):
     nombre = models.CharField(max_length=200)
     username = models.CharField(max_length=120, blank=True, verbose_name='usuario equipo')
     password = models.CharField(max_length=120, blank=True, verbose_name='contraseña')
-    ip = models.CharField(max_length=64, blank=True)
     ip_dominio = models.CharField(max_length=200, blank=True, verbose_name='IP / dominio')
     ubicacion = models.CharField(max_length=200, blank=True, verbose_name='ubicación')
     sn = models.CharField(max_length=120, blank=True, verbose_name='número de serie')
@@ -36,8 +35,21 @@ class Activo(models.Model):
     )
     fecha_instalacion = models.DateField(null=True, blank=True)
     fecha_compra = models.DateField(null=True, blank=True)
-    factura_boleta = models.CharField(max_length=120, blank=True, verbose_name='factura/boleta')
-    archivo_compra = models.FileField(upload_to='activos/', null=True, blank=True)
+    factura = models.ForeignKey(
+        'presupuestos.FacturaBoleta',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='activos',
+        verbose_name='factura / boleta',
+    )
+    archivo_compra = models.FileField(
+        upload_to='activos/',
+        null=True,
+        blank=True,
+        verbose_name='Foto caja o S/N',
+        help_text='Foto de la caja del equipo o del número de serie.',
+    )
     notas = models.TextField(blank=True)
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='activos_creados',

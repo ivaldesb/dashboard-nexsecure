@@ -244,7 +244,7 @@ def detail(request, pk):
         ctx['timeline_config_url'] = reverse('proyectos:timeline_config', args=[proyecto.pk])
 
     if tab == 'activos':
-        ctx['activos'] = proyecto.activos.all()
+        ctx['activos'] = proyecto.activos.select_related('categoria', 'factura').all()
     elif tab == 'documentos':
         ctx['documentos'] = [d for d in proyecto.documentos.all() if d.user_can_access(request.user)]
     elif tab == 'incidencias':
