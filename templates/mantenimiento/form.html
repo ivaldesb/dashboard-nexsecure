@@ -9,16 +9,18 @@
     {% for t in templates %}{{ t.tipo_servicio }}{% if not forloop.last %}, {% endif %}{% endfor %}
   </p>
   {% endif %}
-  <form method="post">{% csrf_token %}
+  <form method="post" class="nx-form-grid">{% csrf_token %}
     {% for field in form %}
       <div class="form-group">
-        <label>{{ field.label }}</label>
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field.errors }}
         {{ field }}
       </div>
     {% endfor %}
-    <button class="btn btn-success" type="submit">Guardar</button>
-    <a class="btn btn-default" href="{% url 'mantenimiento:list' proyecto.pk %}">Cancelar</a>
+    <div class="nx-form-actions">
+      <button class="btn btn-success" type="submit">Guardar</button>
+      <a class="btn btn-default" href="{% url 'mantenimiento:list' proyecto.pk %}">Cancelar</a>
+    </div>
   </form>
 </div>
 {% endblock %}

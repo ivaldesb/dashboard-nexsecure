@@ -1,8 +1,11 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.forms import ModelForm
 
-from presupuestos.models import FacturaBoleta, Gasto, Presupuesto, PresupuestoItem
+from presupuestos.models import FacturaBoleta, Gasto, PagoEmpleado, Presupuesto, PresupuestoItem
+
+User = get_user_model()
 
 
 def _fc(form):
@@ -33,6 +36,9 @@ class PresupuestoItemForm(ModelForm):
             'tipo',
             'referencia',
             'descripcion',
+            'ubicacion',
+            'tipologia',
+            'caracteristicas',
             'cantidad',
             'costo_insumo',
             'pct_maquila',
@@ -56,6 +62,9 @@ class PresupuestoItemForm(ModelForm):
             'incidencia',
             'visita_mantenimiento_id',
             'descripcion',
+            'ubicacion',
+            'tipologia',
+            'caracteristicas',
             'utilidad_manual',
             'precio_unitario',
         ):
@@ -111,9 +120,9 @@ class PresupuestoItemForm(ModelForm):
 class GastoForm(ModelForm):
     class Meta:
         model = Gasto
-        fields = ['factura', 'descripcion', 'monto', 'fecha']
+        fields = ['factura', 'tipo', 'descripcion', 'monto', 'fecha', 'pagado_por_tipo', 'pagado_por']
 
-    def __init__(self, *args, proyecto=None, presupuesto=None, **kwargs):
+    def __init__(self, *args, proyecto=None, presupuesto=None, equipo=None, **kwargs):
         super().__init__(*args, **kwargs)
         _fc(self)
         self.fields['monto'].localize = False
@@ -122,13 +131,20 @@ class GastoForm(ModelForm):
         self.fields['factura'].required = True
         self.fields['factura'].label = 'Factura / boleta'
         self.fields['factura'].empty_label = 'Selecciona factura o boleta…'
+        self.fields['pagado_por'].required = False
+        self.fields['pagado_por'].empty_label = '—'
         exclude_pk = getattr(self.instance, 'pk', None)
         qs = FacturaBoleta.objects.none()
+        users = User.objects.none()
         if proyecto is not None:
             qs = FacturaBoleta.objects.filter(proyecto=proyecto).order_by('-fecha', '-pk')
             if presupuesto is not None:
                 qs = qs.filter(Q(presupuesto=presupuesto) | Q(presupuesto__isnull=True)).distinct()
+            users = proyecto.equipo.all().order_by('first_name', 'username')
+        if equipo is not None:
+            users = equipo
         self.fields['factura'].queryset = qs
+        self.fields['pagado_por'].queryset = users
 
         def _label(f):
             saldo = f.saldo_disponible(exclude_gasto_pk=exclude_pk)
@@ -140,6 +156,10 @@ class GastoForm(ModelForm):
         cleaned = super().clean()
         factura = cleaned.get('factura')
         monto = cleaned.get('monto')
+        if cleaned.get('pagado_por_tipo') == Gasto.PAGADO_USUARIO and not cleaned.get('pagado_por'):
+            self.add_error('pagado_por', 'Indica el usuario que pagó.')
+        elif cleaned.get('pagado_por_tipo') != Gasto.PAGADO_USUARIO:
+            cleaned['pagado_por'] = None
         if factura is None or monto is None:
             return cleaned
         exclude_pk = self.instance.pk if self.instance and self.instance.pk else None
@@ -157,11 +177,12 @@ class GastoForm(ModelForm):
 class FacturaForm(ModelForm):
     class Meta:
         model = FacturaBoleta
-        fields = ['tipo', 'numero', 'fecha', 'monto_neto', 'monto_iva', 'archivo']
+        fields = ['tipo', 'numero', 'proveedor', 'fecha', 'monto_neto', 'monto_iva', 'archivo']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         _fc(self)
+        self.fields['proveedor'].required = False
         self.fields['archivo'].required = True
         self.fields['archivo'].help_text = 'Obligatorio: adjunta el PDF o imagen de la factura/boleta.'
         for name in ('monto_neto', 'monto_iva'):
@@ -170,3 +191,51 @@ class FacturaForm(ModelForm):
             self.fields[name].widget.attrs.setdefault('step', 'any')
         if self.instance and self.instance.pk and self.instance.archivo:
             self.fields['archivo'].required = False
+
+
+class PagoEmpleadoForm(ModelForm):
+    class Meta:
+        model = PagoEmpleado
+        fields = ['empleado', 'porcentaje_pago', 'anticipo', 'quien_anticipo_tipo', 'quien_anticipo']
+
+    def __init__(self, *args, proyecto=None, equipo=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        _fc(self)
+        self.fields['quien_anticipo'].required = False
+        self.fields['quien_anticipo'].empty_label = '—'
+        for name in ('porcentaje_pago', 'anticipo'):
+            self.fields[name].localize = False
+            self.fields[name].widget.is_localized = False
+            self.fields[name].widget.attrs.setdefault('step', 'any')
+        users = User.objects.none()
+        if proyecto is not None:
+            users = proyecto.equipo.all().order_by('first_name', 'username')
+        if equipo is not None:
+            users = equipo
+        # incluir empleado actual al editar aunque no esté en equipo
+        if self.instance and self.instance.pk and self.instance.empleado_id:
+            users = (users | User.objects.filter(pk=self.instance.empleado_id)).distinct()
+        self.fields['empleado'].queryset = users
+        self.fields['quien_anticipo'].queryset = users
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('quien_anticipo_tipo') == PagoEmpleado.QUIEN_USUARIO and not cleaned.get('quien_anticipo'):
+            self.add_error('quien_anticipo', 'Indica quién dio el anticipo.')
+        elif cleaned.get('quien_anticipo_tipo') != PagoEmpleado.QUIEN_USUARIO:
+            cleaned['quien_anticipo'] = None
+        return cleaned
+
+
+class PctEmpresaForm(ModelForm):
+    class Meta:
+        model = Presupuesto
+        fields = ['pct_empresa']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _fc(self)
+        self.fields['pct_empresa'].localize = False
+        self.fields['pct_empresa'].widget.is_localized = False
+        self.fields['pct_empresa'].widget.attrs.setdefault('step', 'any')
+        self.fields['pct_empresa'].label = '% Empresa'

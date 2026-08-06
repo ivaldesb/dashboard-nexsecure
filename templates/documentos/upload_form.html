@@ -3,38 +3,40 @@
 {% block content %}
 <div class="x_panel">
   <div class="x_title"><h2>Subir documento — {{ proyecto.nombre }}</h2><div class="clearfix"></div></div>
-  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+  <form method="post" class="nx-form-grid" enctype="multipart/form-data">{% csrf_token %}
     <div class="form-group">
-      <label>{{ form.titulo.label }}</label>
+      <label for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
       {{ form.titulo.errors }}
       {{ form.titulo }}
     </div>
     <div class="form-group">
-      <label>{{ form.archivo.label }}</label>
+      <label for="{{ form.archivo.id_for_label }}">{{ form.archivo.label }}</label>
       {{ form.archivo.errors }}
       {{ form.archivo }}
     </div>
     <div class="form-group">
-      <label>{{ form.categoria.label }}</label>
+      <label for="{{ form.categoria.id_for_label }}">{{ form.categoria.label }}</label>
       {{ form.categoria.errors }}
       {{ form.categoria }}
     </div>
     <div class="form-group">
-      <label>{{ form.categoria_nueva.label }}</label>
+      <label for="{{ form.categoria_nueva.id_for_label }}">{{ form.categoria_nueva.label }}</label>
       {{ form.categoria_nueva.errors }}
       {{ form.categoria_nueva }}
       {% if form.categoria_nueva.help_text %}<p class="help-block">{{ form.categoria_nueva.help_text }}</p>{% endif %}
     </div>
-    <div class="form-group">
+    <div class="form-group nx-full">
       <div class="checkbox"><label>{{ form.visible_cliente }} Visible para clientes del proyecto</label></div>
       {{ form.visible_cliente.errors }}
     </div>
-    <div class="form-group">
+    <div class="form-group nx-full">
       <div class="checkbox"><label>{{ form.solo_admin }} Solo administradores</label></div>
       {{ form.solo_admin.errors }}
     </div>
-    <button class="btn btn-success" type="submit">Subir</button>
-    <a class="btn btn-default" href="{% url 'proyectos:detail' proyecto.pk %}">Cancelar</a>
+    <div class="nx-form-actions">
+      <button class="btn btn-success" type="submit">Subir</button>
+      <a class="btn btn-default" href="{% url 'proyectos:detail' proyecto.pk %}">Cancelar</a>
+    </div>
   </form>
 </div>
 {% endblock %}

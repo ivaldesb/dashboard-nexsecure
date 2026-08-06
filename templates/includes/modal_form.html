@@ -1,7 +1,8 @@
 <span data-nx-modal-title class="hidden">{{ title }}</span>
-<form method="post" action="{{ action_url }}" {% if multipart %}enctype="multipart/form-data"{% endif %} data-nx-modal-form>
+<form method="post" action="{{ action_url }}" class="nx-form-grid" {% if multipart %}enctype="multipart/form-data"{% endif %} data-nx-modal-form>
   {% csrf_token %}
   <input type="hidden" name="modal" value="1">
+  {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
   {% if extra_hidden %}
     {% for k, v in extra_hidden.items %}
       <input type="hidden" name="{{ k }}" value="{{ v }}">
@@ -12,7 +13,7 @@
     {% include form_body_template %}
   {% else %}
     {% for field in form %}
-      <div class="form-group">
+      <div class="form-group{% if field.name == 'roles' or field.name == 'permissions' or field.name == 'description' %} nx-full{% endif %}">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field.errors }}
         {{ field }}

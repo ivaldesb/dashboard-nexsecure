@@ -23,6 +23,20 @@
     <label>{{ form.descripcion.label }}</label>
     {{ form.descripcion.errors }}{{ form.descripcion }}
   </div>
+  <div class="row">
+    <div class="col-md-4 form-group">
+      <label>{{ form.ubicacion.label }}</label>
+      {{ form.ubicacion.errors }}{{ form.ubicacion }}
+    </div>
+    <div class="col-md-4 form-group">
+      <label>{{ form.tipologia.label }}</label>
+      {{ form.tipologia.errors }}{{ form.tipologia }}
+    </div>
+    <div class="col-md-4 form-group">
+      <label>{{ form.caracteristicas.label }}</label>
+      {{ form.caracteristicas.errors }}{{ form.caracteristicas }}
+    </div>
+  </div>
   <h5>Porcentajes (Material)</h5>
   <div class="row matriz-pct-wrap">
     <div class="col-md-3 form-group"><label>% Maquila</label>{{ form.pct_maquila }}</div>

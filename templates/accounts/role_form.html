@@ -4,17 +4,19 @@
 <div class="page-title"><div class="title_left"><h3>{{ title }}</h3></div></div>
 <div class="clearfix"></div>
 <div class="x_panel">
-  <form method="post">
+  <form method="post" class="nx-form-grid">
     {% csrf_token %}
     {% for field in form %}
-      <div class="form-group">
-        <label>{{ field.label }}</label>
+      <div class="form-group{% if field.name == 'permissions' or field.name == 'description' %} nx-full{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
         {% if field.errors %}<div class="text-danger">{{ field.errors }}</div>{% endif %}
       </div>
     {% endfor %}
-    <button class="btn btn-success" type="submit">Guardar</button>
-    <a class="btn btn-default" href="{% url 'accounts:role_list' %}">Cancelar</a>
+    <div class="nx-form-actions">
+      <button class="btn btn-success" type="submit">Guardar</button>
+      <a class="btn btn-default" href="{% url 'accounts:role_list' %}">Cancelar</a>
+    </div>
   </form>
 </div>
 {% endblock %}

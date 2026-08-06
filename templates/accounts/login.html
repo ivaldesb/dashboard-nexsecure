@@ -18,15 +18,19 @@
       <h1>NexSecure</h1>
     </div>
     <p class="nx-login-sub">Acceso privado al CRM. Las credenciales las entrega la administración.</p>
-    <form method="post">
+    <form method="post" class="nx-login-form">
       {% csrf_token %}
       {% if form.errors %}
         <div class="alert alert-danger">Usuario o contraseña incorrectos.</div>
       {% endif %}
-      <label class="sr-only" for="id_username">Usuario</label>
-      {{ form.username }}
-      <label class="sr-only" for="id_password">Contraseña</label>
-      {{ form.password }}
+      <div class="nx-login-field">
+        <label for="id_username">Usuario</label>
+        {{ form.username }}
+      </div>
+      <div class="nx-login-field">
+        <label for="id_password">Contraseña</label>
+        {{ form.password }}
+      </div>
       <button class="btn-nx-login" type="submit">Entrar</button>
     </form>
     <p class="nx-login-foot">Sin registro público</p>
