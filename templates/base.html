@@ -1,0 +1,75 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NexSecure | {% block title %}Dashboard{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="{% static 'vendors/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'vendors/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet">
+  <link href="{% static 'vendors/nprogress/nprogress.css' %}" rel="stylesheet">
+  <link href="{% static 'build/css/custom.min.css' %}" rel="stylesheet">
+  <link href="{% static 'css/nexsecure.css' %}" rel="stylesheet">
+  {% block stylesheets %}{% endblock %}
+</head>
+<body class="nav-md nx-app">
+  <div class="container body">
+    <div class="main_container">
+      <div class="col-md-3 left_col">
+        {% include "includes/sidebar.html" %}
+      </div>
+      <div class="top_nav">
+        <div class="nav_menu">
+          <nav>
+            <div class="nav toggle"><a id="menu_toggle"><i class="fa fa-bars"></i></a></div>
+            <ul class="nav navbar-nav navbar-right">
+              <li class="">
+                <a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                  <span class="nx-user-chip">
+                    <span class="nx-avatar">{{ request.user.username|slice:":1"|upper }}</span>
+                    <span>
+                      {{ request.user.get_full_name|default:request.user.username }}
+                      {% if request.user.tag %}<span class="label label-info">{{ request.user.tag }}</span>{% endif %}
+                    </span>
+                  </span>
+                </a>
+                <ul class="dropdown-menu dropdown-usermenu pull-right">
+                  <li>
+                    <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+                      <button type="submit" class="btn btn-link" style="padding:10px 14px;width:100%;text-align:left">
+                        <i class="fa fa-sign-out"></i> Cerrar sesión
+                      </button>
+                    </form>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+      <div class="right_col" role="main">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+      </div>
+      <footer>
+        <div class="pull-right">NexSecure CRM</div>
+        <div class="clearfix"></div>
+      </footer>
+    </div>
+  </div>
+  <script src="{% static 'vendors/jquery/dist/jquery.min.js' %}"></script>
+  <script src="{% static 'vendors/bootstrap/dist/js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'vendors/fastclick/lib/fastclick.js' %}"></script>
+  <script src="{% static 'vendors/nprogress/nprogress.js' %}"></script>
+  <script src="{% static 'build/js/custom.min.js' %}"></script>
+  {% block javascripts %}{% endblock %}
+</body>
+</html>

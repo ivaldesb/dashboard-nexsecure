@@ -1,0 +1,59 @@
+<div class="left_col scroll-view">
+  <div class="navbar nav_title">
+    <a href="{% url 'core:dashboard' %}" class="site_title">
+      <span class="nx-brand-mark">N</span>
+      <span>NexSecure</span>
+    </a>
+  </div>
+  <div class="clearfix"></div>
+
+  <div class="nx-sidebar-profile">
+    <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+    {% if sidebar_is_admin %}Administrador
+    {% elif sidebar_is_cliente %}Portal cliente
+    {% else %}Equipo{% endif %}
+    {% if request.user.tag %}<span class="nx-tag">{{ request.user.tag }}</span>{% endif %}
+  </div>
+
+  <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+    <div class="menu_section">
+      <h3>Principal</h3>
+      <ul class="nav side-menu">
+        <li><a href="{% url 'core:dashboard' %}"><i class="fa fa-home"></i> Dashboard</a></li>
+        {% if sidebar_is_cliente and not sidebar_is_admin %}
+          <li><a href="{% url 'clientes:portal' %}"><i class="fa fa-building"></i> Mi portal</a></li>
+          <li><a href="{% url 'proyectos:list' %}"><i class="fa fa-folder-open"></i> Mis proyectos</a></li>
+          <li><a href="{% url 'calendario:list' %}"><i class="fa fa-calendar"></i> Calendario</a></li>
+        {% else %}
+          <li><a href="{% url 'clientes:list' %}"><i class="fa fa-building"></i> Clientes</a></li>
+          <li><a href="{% url 'proyectos:list' %}"><i class="fa fa-folder-open"></i> Proyectos</a></li>
+          <li><a href="{% url 'activos:list' %}"><i class="fa fa-desktop"></i> Activos</a></li>
+          <li><a href="{% url 'incidencias:list' %}"><i class="fa fa-exclamation-triangle"></i> Incidencias</a></li>
+          <li><a href="{% url 'calendario:list' %}"><i class="fa fa-calendar"></i> Calendario</a></li>
+        {% endif %}
+      </ul>
+    </div>
+
+    {% if not sidebar_is_cliente or sidebar_is_admin %}
+    {% if sidebar_is_admin %}
+    <div class="menu_section">
+      <h3>Administración</h3>
+      <ul class="nav side-menu">
+        <li><a href="{% url 'finanzas:dashboard' %}"><i class="fa fa-line-chart"></i> Finanzas</a></li>
+        <li><a href="{% url 'accounts:user_list' %}"><i class="fa fa-users"></i> Usuarios</a></li>
+        <li><a href="{% url 'accounts:role_list' %}"><i class="fa fa-shield"></i> Roles</a></li>
+        <li><a href="{% url 'proyectos:estado_list' %}"><i class="fa fa-tags"></i> Estados</a></li>
+        <li><a href="{% url 'marketing:stub' %}"><i class="fa fa-bullhorn"></i> Marketing</a></li>
+      </ul>
+    </div>
+    {% else %}
+    <div class="menu_section">
+      <h3>Más</h3>
+      <ul class="nav side-menu">
+        <li><a href="{% url 'marketing:stub' %}"><i class="fa fa-bullhorn"></i> Marketing</a></li>
+      </ul>
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>

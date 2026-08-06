@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Permisos documento{% endblock %}
+{% block content %}
+<div class="x_panel">
+  <div class="x_title"><h2>Permisos — {{ documento.titulo }}</h2><div class="clearfix"></div></div>
+  <form method="post">{% csrf_token %}
+    <div class="form-group">
+      <label>{{ form.visible_cliente.label }}</label>
+      {{ form.visible_cliente.errors }}
+      <div class="checkbox"><label>{{ form.visible_cliente }} Visible para clientes del proyecto</label></div>
+    </div>
+    <div class="form-group">
+      <label>{{ form.solo_admin.label }}</label>
+      {{ form.solo_admin.errors }}
+      <div class="checkbox"><label>{{ form.solo_admin }} Solo administradores del sistema</label></div>
+    </div>
+    <div class="form-group">
+      <label>{{ form.users_allowed.label }}</label>
+      {{ form.users_allowed.errors }}
+      {% for u in form.users_allowed %}
+        <div class="checkbox"><label>{{ u }} {{ u.choice_label }}</label></div>
+      {% endfor %}
+    </div>
+    <button class="btn btn-success" type="submit">Guardar</button>
+    <a class="btn btn-default" href="{% url 'proyectos:detail' documento.proyecto_id %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

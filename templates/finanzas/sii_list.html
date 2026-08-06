@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Documentos SII{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Documentos SII</h3></div>
+  <div class="title_right">
+    <a class="btn btn-primary" href="{% url 'finanzas:sii_upload' %}">Subir documento</a>
+    <a class="btn btn-default" href="{% url 'finanzas:dashboard' %}">Volver</a>
+  </div>
+</div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <table class="table table-striped">
+    <thead>
+      <tr><th>Período</th><th>Título</th><th>Subido por</th><th>Fecha</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for d in documentos %}
+      <tr>
+        <td>{{ d.periodo|date:"Y-m" }}</td>
+        <td><a href="{{ d.archivo.url }}" target="_blank">{{ d.titulo }}</a></td>
+        <td>{{ d.uploaded_by.username|default:"—" }}</td>
+        <td>{{ d.created_at|date:"d/m/Y H:i" }}</td>
+        <td>
+          <form method="post" action="{% url 'finanzas:sii_delete' d.pk %}" style="display:inline" onsubmit="return confirm('¿Eliminar?')">
+            {% csrf_token %}
+            <button class="btn btn-xs btn-danger">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">Sin documentos</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

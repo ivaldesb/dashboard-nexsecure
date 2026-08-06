@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NexSecure | Acceso</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="{% static 'vendors/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'css/nexsecure.css' %}" rel="stylesheet">
+</head>
+<body class="nx-login">
+  <div class="nx-login-card">
+    <div class="nx-login-brand">
+      <span class="nx-brand-mark" style="width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,#14b8a6,#0f766e);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700">N</span>
+      <h1>NexSecure</h1>
+    </div>
+    <p class="nx-login-sub">Acceso privado al CRM. Las credenciales las entrega la administración.</p>
+    <form method="post">
+      {% csrf_token %}
+      {% if form.errors %}
+        <div class="alert alert-danger">Usuario o contraseña incorrectos.</div>
+      {% endif %}
+      <label class="sr-only" for="id_username">Usuario</label>
+      {{ form.username }}
+      <label class="sr-only" for="id_password">Contraseña</label>
+      {{ form.password }}
+      <button class="btn-nx-login" type="submit">Entrar</button>
+    </form>
+    <p class="nx-login-foot">Sin registro público</p>
+  </div>
+</body>
+</html>

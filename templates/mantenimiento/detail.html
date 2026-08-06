@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Visita {{ visita.fecha|date:"d/m/Y" }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left">
+    <h3>Visita — {{ visita.proyecto.nombre }}</h3>
+  </div>
+  <div class="title_right">
+    <span class="label label-default">{{ visita.get_estado_display }}</span>
+  </div>
+</div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <p><strong>Fecha:</strong> {{ visita.fecha|date:"d/m/Y" }}</p>
+  <p><strong>Tipo:</strong> {{ visita.get_tipo_display }}</p>
+  <p><strong>Servicio:</strong> {{ visita.tipo_servicio }}</p>
+  <p><strong>Creado por:</strong> {{ visita.creado_por.username|default:"—" }}</p>
+  <p><strong>Observaciones:</strong></p>
+  <p>{{ visita.observaciones|linebreaksbr|default:"—" }}</p>
+</div>
+<div class="x_panel">
+  <h4>Checklist</h4>
+  <ul class="list-unstyled">
+  {% for item in visita.checklist.all %}
+    <li style="margin-bottom:6px;">
+      <form method="post" action="{% url 'mantenimiento:toggle_checklist' visita.pk item.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-xs {% if item.hecho %}btn-success{% else %}btn-default{% endif %}">
+          {% if item.hecho %}✓{% else %}○{% endif %}
+        </button>
+      </form>
+      <span {% if item.hecho %}style="text-decoration:line-through;color:#888;"{% endif %}>{{ item.texto }}</span>
+    </li>
+  {% empty %}
+    <li>Sin ítems de checklist (no hay plantilla para este tipo_servicio).</li>
+  {% endfor %}
+  </ul>
+</div>
+<div class="x_panel">
+  <h4>Fotos</h4>
+  <div class="row">
+  {% for foto in visita.fotos.all %}
+    <div class="col-md-3 col-sm-4 col-xs-6" style="margin-bottom:12px;">
+      <a href="{{ foto.imagen.url }}" target="_blank" rel="noopener">
+        <img src="{{ foto.imagen.url }}" alt="Foto visita" style="max-width:100%;max-height:160px;">
+      </a>
+      <small>{{ foto.uploaded_by.username|default:"—" }} — {{ foto.created_at|date:"d/m/Y H:i" }}</small>
+    </div>
+  {% empty %}
+    <div class="col-xs-12"><p>Sin fotos.</p></div>
+  {% endfor %}
+  </div>
+  <form method="post" action="{% url 'mantenimiento:upload_foto' visita.pk %}" enctype="multipart/form-data" style="margin-top:12px;">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>Subir foto</label>
+      <input type="file" name="imagen" accept="image/*" class="form-control" required>
+    </div>
+    <button class="btn btn-primary" type="submit">Subir</button>
+  </form>
+</div>
+<a class="btn btn-default" href="{% url 'mantenimiento:list' visita.proyecto_id %}">Volver al listado</a>
+{% endblock %}

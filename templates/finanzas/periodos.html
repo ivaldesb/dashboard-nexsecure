@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Períodos tributarios{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Períodos tributarios</h3></div>
+  <div class="title_right"><a class="btn btn-default" href="{% url 'finanzas:dashboard' %}">Volver</a></div>
+</div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <p class="text-muted">Recalcula desde facturas/boletas del mes. IVA crédito se conserva si ya existe (0 por defecto).</p>
+  <form class="form-inline" method="post" action="{% url 'finanzas:recalcular_periodo' year=2026 month=1 %}" id="recalc-form">
+    {% csrf_token %}
+    <label>Año</label>
+    <input type="number" name="_year" id="recalc-year" class="form-control" value="2026" min="2000" max="2100" style="width:100px">
+    <label>Mes</label>
+    <input type="number" name="_month" id="recalc-month" class="form-control" value="1" min="1" max="12" style="width:70px">
+    <button type="submit" class="btn btn-primary">Recalcular período</button>
+  </form>
+  <script>
+    document.getElementById('recalc-form').addEventListener('submit', function(e) {
+      var y = document.getElementById('recalc-year').value;
+      var m = document.getElementById('recalc-month').value;
+      this.action = '{% url "finanzas:recalcular_periodo" year=9999 month=99 %}'.replace('9999', y).replace('99', m);
+    });
+  </script>
+  <hr>
+  <table class="table table-striped">
+    <thead>
+      <tr><th>Período</th><th>Neto</th><th>IVA débito</th><th>IVA crédito</th><th>IVA a pagar</th><th>PPM</th><th>Notas</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for p in periodos %}
+      <tr>
+        <td>{{ p.periodo|date:"Y-m" }}</td>
+        <td>${{ p.total_neto }}</td>
+        <td>${{ p.iva_debito }}</td>
+        <td>${{ p.iva_credito }}</td>
+        <td>${{ p.iva_a_pagar }}</td>
+        <td>${{ p.ppm }}</td>
+        <td>{{ p.notas|truncatewords:8|default:"—" }}</td>
+        <td>
+          <form method="post" action="{% url 'finanzas:recalcular_periodo' year=p.periodo.year month=p.periodo.month %}" style="display:inline">
+            {% csrf_token %}
+            <button class="btn btn-xs btn-default">Recalcular</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="8">Sin períodos</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+<p><a class="btn btn-primary" href="{% url 'proyectos:pdf_reporte' proyecto.pk %}" target="_blank">Descargar resumen PDF</a></p>
+<h4>PDFs de presupuestos</h4>
+<ul>
+  {% for p in presupuestos %}
+    <li><a href="{% url 'presupuestos:pdf_presupuesto' p.pk %}" target="_blank">{{ p.titulo }}</a></li>
+  {% empty %}<li>Sin presupuestos</li>{% endfor %}
+</ul>

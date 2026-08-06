@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ evento.titulo }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>{{ evento.titulo }}</h3></div>
+  <div class="title_right">
+    <a class="btn btn-default" href="{% url 'calendario:edit' evento.pk %}">Editar</a>
+    <a class="btn btn-default" href="{% url 'calendario:list' %}">Volver</a>
+  </div>
+</div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <p><strong>Tipo:</strong> {{ evento.get_tipo_display }}</p>
+  <p><strong>Ubicación:</strong> {{ evento.ubicacion|default:"—" }}</p>
+  <p><strong>Inicio:</strong> {{ evento.inicio|date:"d/m/Y H:i" }}</p>
+  <p><strong>Fin:</strong> {{ evento.fin|date:"d/m/Y H:i" }}</p>
+  <p><strong>Capa:</strong>
+    {% if evento.capa %}
+      <span style="color:{{ evento.capa.color }}">{{ evento.capa.nombre }}</span>
+    {% else %}—{% endif %}
+  </p>
+  <p><strong>Proyecto:</strong> {{ evento.proyecto.nombre|default:"—" }}</p>
+  <p><strong>Creador:</strong> {{ evento.creador.username }}</p>
+  <p><strong>Asignados:</strong>
+    {% for u in evento.asignados.all %}{{ u.username }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+  </p>
+  <hr>
+  <p>{{ evento.descripcion|linebreaksbr|default:"Sin descripción." }}</p>
+</div>
+{% endblock %}

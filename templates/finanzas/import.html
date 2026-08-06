@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Importar movimientos{% endblock %}
+{% block content %}
+<div class="x_panel">
+  <div class="x_title"><h2>Importar movimientos</h2><div class="clearfix"></div></div>
+  <p class="text-muted">Columnas: <code>fecha,cuenta,tipo,monto,descripcion,referencia,factura_id</code> (tipo: cargo o abono; <code>factura_id</code> opcional = PK de FacturaBoleta)</p>
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <div class="form-group">
+      <label>Formato</label>
+      <select name="formato" class="form-control">
+        <option value="csv">CSV</option>
+        <option value="xlsx">Excel (.xlsx)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Archivo</label>
+      <input type="file" name="archivo" class="form-control" accept=".csv,.xlsx" required>
+    </div>
+    <button class="btn btn-success" type="submit">Importar</button>
+    <a class="btn btn-default" href="{% url 'finanzas:movimientos_list' %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

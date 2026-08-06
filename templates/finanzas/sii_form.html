@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Subir documento SII{% endblock %}
+{% block content %}
+<div class="x_panel">
+  <div class="x_title"><h2>Subir documento SII</h2><div class="clearfix"></div></div>
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <div class="form-group">
+      <label>Título</label>
+      <input type="text" name="titulo" class="form-control" required>
+    </div>
+    <div class="form-group">
+      <label>Período (día 1 del mes)</label>
+      <input type="date" name="periodo" class="form-control" required>
+    </div>
+    <div class="form-group">
+      <label>Archivo</label>
+      <input type="file" name="archivo" class="form-control" required>
+    </div>
+    <div class="form-group">
+      <label>Notas</label>
+      <textarea name="notas" class="form-control" rows="2"></textarea>
+    </div>
+    <button class="btn btn-success" type="submit">Subir</button>
+    <a class="btn btn-default" href="{% url 'finanzas:sii_list' %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

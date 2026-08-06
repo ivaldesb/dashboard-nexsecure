@@ -1,0 +1,18 @@
+<p><a class="btn btn-primary btn-sm" href="{% url 'documentos:upload' proyecto.pk %}">Subir documento</a></p>
+<table class="table table-striped">
+  <thead><tr><th>Nombre</th><th>Categoría</th><th>Visible cliente</th><th></th></tr></thead>
+  <tbody>
+  {% for d in documentos %}
+    <tr>
+      <td>{{ d.titulo }}</td>
+      <td>{% if d.categoria %}{{ d.categoria }}{% else %}—{% endif %}</td>
+      <td>{{ d.visible_cliente|yesno:"Sí,No" }}</td>
+      <td>
+        <a href="{% url 'documentos:view' d.pk %}">Ver</a>
+        <a href="{% url 'documentos:download' d.pk %}">Descargar</a>
+        <a href="{% url 'documentos:edit_acl' d.pk %}">ACL</a>
+      </td>
+    </tr>
+  {% empty %}<tr><td colspan="4">Sin documentos</td></tr>{% endfor %}
+  </tbody>
+</table>

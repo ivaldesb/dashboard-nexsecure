@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Tareas{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Tareas</h3></div>
+  <div class="title_right">
+    <a class="btn btn-default" href="{% url 'calendario:list' %}">Eventos</a>
+    <a class="btn btn-primary" href="{% url 'calendario:tarea_create' %}">Nueva tarea</a>
+  </div>
+</div>
+<div class="clearfix"></div>
+
+<div class="x_panel">
+  <div class="x_title"><h2>Capas</h2><div class="clearfix"></div></div>
+  <form method="post">{% csrf_token %}
+    {% for c in capas %}
+      <button class="btn btn-xs {% if c.visible %}btn-success{% else %}btn-default{% endif %}"
+              type="submit" name="toggle_capa" value="{{ c.pk }}"
+              title="{% if c.visible %}Ocultar{% else %}Mostrar{% endif %}">
+        <span style="display:inline-block;width:10px;height:10px;background:{{ c.color }};margin-right:4px;"></span>
+        {{ c.nombre }}{% if not c.visible %} (oculta){% endif %}
+      </button>
+    {% empty %}
+      <span class="text-muted">Sin capas</span>
+    {% endfor %}
+  </form>
+</div>
+
+<div class="x_panel">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Título</th><th>Prioridad</th><th>Deadline</th><th>Capa</th>
+        <th>Proyecto</th><th>Asignados</th><th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for t in tareas %}
+      <tr{% if t.completada %} class="text-muted"{% endif %}>
+        <td>{{ t.titulo }}</td>
+        <td>{{ t.get_prioridad_display }}</td>
+        <td>{{ t.deadline|date:"d/m/Y" }}</td>
+        <td>{% if t.capa %}<span style="color:{{ t.capa.color }}">{{ t.capa.nombre }}</span>{% else %}—{% endif %}</td>
+        <td>{{ t.proyecto.nombre|default:"—" }}</td>
+        <td>{% for u in t.asignados.all %}{{ u.username }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
+        <td>{% if t.completada %}Completada{% else %}Pendiente{% endif %}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">Sin tareas</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

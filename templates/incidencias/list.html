@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Incidencias{% endblock %}
+{% block content %}
+<div class="page-title"><div class="title_left"><h3>Incidencias</h3></div></div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <table class="table table-striped">
+    <thead>
+      <tr><th>Título</th><th>Proyecto</th><th>Estado</th><th>Autor</th><th>Fecha</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for i in incidencias %}
+      <tr>
+        <td>{{ i.titulo }}</td>
+        <td>{{ i.proyecto.nombre }}</td>
+        <td>{{ i.get_estado_display }}</td>
+        <td>{{ i.autor.username|default:"—" }}</td>
+        <td>{{ i.created_at|date:"d/m/Y H:i" }}</td>
+        <td><a href="{% url 'incidencias:detail' i.pk %}">Ver</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Sin incidencias</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

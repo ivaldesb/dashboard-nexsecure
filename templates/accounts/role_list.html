@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Roles{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Roles</h3></div>
+  <div class="title_right"><a class="btn btn-primary" href="{% url 'accounts:role_create' %}">Nuevo rol</a></div>
+</div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <table class="table table-striped">
+    <thead><tr><th>Nombre</th><th>Admin</th><th>Permisos</th><th></th></tr></thead>
+    <tbody>
+    {% for r in roles %}
+      <tr>
+        <td>{{ r.name }}</td>
+        <td>{{ r.is_admin|yesno:"Sí,No" }}</td>
+        <td>{{ r.permissions.count }}</td>
+        <td>
+          <a href="{% url 'accounts:role_edit' r.pk %}">Editar</a>
+          {% if r.name != 'admin' %}
+          <form style="display:inline" method="post" action="{% url 'accounts:role_delete' r.pk %}">{% csrf_token %}
+            <button class="btn btn-xs btn-danger">Eliminar</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}<tr><td colspan="4">Sin roles</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

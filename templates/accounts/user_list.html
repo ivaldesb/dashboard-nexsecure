@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div class="title_left"><h3>Usuarios</h3></div>
+  <div class="title_right"><a class="btn btn-primary" href="{% url 'accounts:user_create' %}">Nuevo usuario</a></div>
+</div>
+<div class="clearfix"></div>
+<div class="x_panel">
+  <table class="table table-striped">
+    <thead><tr><th>Usuario</th><th>Email</th><th>Tag</th><th>Roles</th><th>Activo</th><th></th></tr></thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td>{{ u.username }}</td>
+        <td>{{ u.email }}</td>
+        <td>{% if u.tag %}<span class="label label-info">{{ u.tag }}</span>{% else %}—{% endif %}</td>
+        <td>{{ u.role_names }}</td>
+        <td>{{ u.is_active|yesno:"Sí,No" }}</td>
+        <td>
+          <a href="{% url 'accounts:user_edit' u.pk %}">Editar</a>
+          <form style="display:inline" method="post" action="{% url 'accounts:user_toggle' u.pk %}">{% csrf_token %}
+            <button class="btn btn-xs btn-warning">Activar/Desactivar</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}<tr><td colspan="6">Sin usuarios</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

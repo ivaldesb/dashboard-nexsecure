@@ -1,0 +1,18 @@
+{% if visitas %}
+<table class="table table-striped">
+  <thead><tr><th>Fecha</th><th>Tipo</th><th>Servicio</th><th>Estado</th><th></th></tr></thead>
+  <tbody>
+  {% for v in visitas %}
+    <tr>
+      <td>{{ v.fecha }}</td>
+      <td>{{ v.get_tipo_display }}</td>
+      <td>{{ v.tipo_servicio }}</td>
+      <td>{{ v.estado }}</td>
+      <td><a href="{% url 'mantenimiento:detail' v.pk %}">Ver</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Sin visitas de mantenimiento. {% if mantenimiento_create_url %}<a href="{{ mantenimiento_create_url }}">Agendar</a>{% endif %}</p>
+{% endif %}

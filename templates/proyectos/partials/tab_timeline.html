@@ -1,0 +1,18 @@
+{% if timeline_config_url %}
+<div class="pull-right">
+  <a href="{{ timeline_config_url }}" title="Configurar timeline"><i class="fa fa-cog"></i></a>
+</div>
+{% endif %}
+<ul class="list-unstyled timeline">
+  {% for e in timeline %}
+    <li>
+      <div class="block">
+        <div class="block_content">
+          <h2 class="title">{{ e.titulo }}</h2>
+          <div class="byline"><span>{{ e.created_at }}</span> — {{ e.actor|default:"sistema" }}</div>
+          <p>{{ e.detalle }}</p>
+        </div>
+      </div>
+    </li>
+  {% empty %}<li>Sin eventos</li>{% endfor %}
+</ul>

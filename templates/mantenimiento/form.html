@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="x_panel">
+  <div class="x_title"><h2>{{ title }} — {{ proyecto.nombre }}</h2><div class="clearfix"></div></div>
+  {% if templates %}
+  <p class="text-muted">
+    Plantillas disponibles (usa el mismo <code>tipo_servicio</code> para copiar el checklist):
+    {% for t in templates %}{{ t.tipo_servicio }}{% if not forloop.last %}, {% endif %}{% endfor %}
+  </p>
+  {% endif %}
+  <form method="post">{% csrf_token %}
+    {% for field in form %}
+      <div class="form-group">
+        <label>{{ field.label }}</label>
+        {{ field.errors }}
+        {{ field }}
+      </div>
+    {% endfor %}
+    <button class="btn btn-success" type="submit">Guardar</button>
+    <a class="btn btn-default" href="{% url 'mantenimiento:list' proyecto.pk %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
