@@ -1,13 +1,24 @@
+from urllib.parse import urlencode
+
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
+from accounts.permissions import require_admin
 from core.modal import modal_form, modal_success
 from core.pdf import render_presupuesto_pdf
-from presupuestos.forms import FacturaForm, GastoForm, PresupuestoAdicionalForm, PresupuestoItemForm
-from presupuestos.models import FacturaBoleta, Presupuesto, PresupuestoItem
+from presupuestos.finance import resumen_financiero
+from presupuestos.forms import (
+    FacturaForm,
+    GastoForm,
+    PagoEmpleadoForm,
+    PctEmpresaForm,
+    PresupuestoAdicionalForm,
+    PresupuestoItemForm,
+)
+from presupuestos.models import FacturaBoleta, PagoEmpleado, Presupuesto, PresupuestoItem
 from proyectos.models import Proyecto, TimelineEvent
 
 
@@ -53,6 +64,14 @@ def _detail_url(presupuesto_id):
     return reverse('presupuestos:detail', kwargs={'presupuesto_id': presupuesto_id})
 
 
+def _next_or_detail(request, presupuesto_id):
+    nxt = (request.POST.get('next') or request.GET.get('next') or '').strip()
+    # ponytail: solo paths relativos locales
+    if nxt.startswith('/') and not nxt.startswith('//'):
+        return nxt
+    return _detail_url(presupuesto_id)
+
+
 def pdf_presupuesto(request, pk):
     presupuesto = get_object_or_404(Presupuesto.objects.select_related('proyecto'), pk=pk)
     if not presupuesto.proyecto.user_has_access(request.user):
@@ -62,16 +81,43 @@ def pdf_presupuesto(request, pk):
 
 def detail(request, presupuesto_id):
     presupuesto = get_object_or_404(
-        Presupuesto.objects.select_related('proyecto').prefetch_related('items', 'gastos', 'facturas'),
+        Presupuesto.objects.select_related('proyecto').prefetch_related(
+            'items',
+            'gastos__pagado_por',
+            'gastos__factura',
+            'facturas',
+            'pagos_empleados__empleado',
+            'proyecto__clientes',
+        ),
         pk=presupuesto_id,
     )
     if not presupuesto.proyecto.user_has_access(request.user):
         raise PermissionDenied
     is_cliente_view = _is_cliente_view(request.user)
-    return render(request, 'presupuestos/detail.html', {
+    is_admin = request.user.is_system_admin()
+    ctx = {
         'presupuesto': presupuesto,
         'is_cliente_view': is_cliente_view,
-    })
+        'is_admin': is_admin,
+    }
+    if is_admin:
+        resumen = resumen_financiero(presupuesto)
+        equipo = presupuesto.proyecto.equipo.all()
+        ctx.update({
+            'resumen': resumen,
+            'secundarios': resumen.get('secundarios', []),
+            'equipo_users': equipo,
+            'pct_empresa_form': PctEmpresaForm(instance=presupuesto),
+            'pct_form': PctEmpresaForm(instance=presupuesto),
+            'pago_form': PagoEmpleadoForm(equipo=equipo),
+            'gasto_form': GastoForm(
+                proyecto=presupuesto.proyecto,
+                presupuesto=presupuesto,
+                equipo=equipo,
+            ),
+            'factura_form': FacturaForm(),
+        })
+    return render(request, 'presupuestos/detail.html', ctx)
 
 
 @require_http_methods(['GET', 'POST'])
@@ -83,6 +129,7 @@ def create_adicional(request, proyecto_id):
         presupuesto = form.save(commit=False)
         presupuesto.proyecto = proyecto
         presupuesto.tipo = Presupuesto.ADICIONAL
+        presupuesto.generalidades = proyecto.generalidades or presupuesto.generalidades
         presupuesto.creado_por = request.user
         presupuesto.save()
         TimelineEvent.objects.create(
@@ -108,22 +155,28 @@ def item_add(request, presupuesto_id):
     if _is_cliente_view(request.user):
         raise PermissionDenied
     form = PresupuestoItemForm(request.POST or None)
+    back = _next_or_detail(request, presupuesto.pk)
     if request.method == 'POST' and form.is_valid():
         item = form.save(commit=False)
         item.presupuesto = presupuesto
         item.save()
         messages.success(request, 'Ítem añadido.')
-        return modal_success(request, _detail_url(presupuesto.pk))
+        return modal_success(request, back)
+    action = reverse('presupuestos:item_add', args=[presupuesto.pk])
+    nxt = request.GET.get('next')
+    if nxt:
+        action += f'?next={nxt}'
     return modal_form(
         request,
         title='Añadir ítem',
         form=form,
-        action_url=reverse('presupuestos:item_add', args=[presupuesto.pk]),
+        action_url=action,
         extra={
             'form_body_template': 'presupuestos/item_form_body.html',
             'presupuesto': presupuesto,
-            'cancel_url': _detail_url(presupuesto.pk),
+            'cancel_url': back,
             'include_matriz_js': True,
+            'next': nxt or '',
         },
     )
 
@@ -136,20 +189,26 @@ def item_edit(request, pk):
     if _is_cliente_view(request.user):
         raise PermissionDenied
     form = PresupuestoItemForm(request.POST or None, instance=item)
+    back = _next_or_detail(request, item.presupuesto_id)
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Ítem actualizado.')
-        return modal_success(request, _detail_url(item.presupuesto_id))
+        return modal_success(request, back)
+    action = reverse('presupuestos:item_edit', args=[pk])
+    nxt = request.GET.get('next') or ''
+    if nxt:
+        action += '?' + urlencode({'next': nxt})
     return modal_form(
         request,
         title='Editar ítem',
         form=form,
-        action_url=reverse('presupuestos:item_edit', args=[pk]),
+        action_url=action,
         extra={
             'form_body_template': 'presupuestos/item_form_body.html',
             'presupuesto': item.presupuesto,
-            'cancel_url': _detail_url(item.presupuesto_id),
+            'cancel_url': back,
             'include_matriz_js': True,
+            'next': nxt,
         },
     )
 
@@ -164,9 +223,10 @@ def item_delete(request, pk):
     presupuesto_id = item.presupuesto_id
     item.delete()
     messages.success(request, 'Ítem eliminado.')
-    return redirect('presupuestos:detail', presupuesto_id=presupuesto_id)
+    return redirect(_next_or_detail(request, presupuesto_id))
 
 
+@require_admin
 @require_http_methods(['GET', 'POST'])
 def gasto_add(request, proyecto_id):
     proyecto = _get_proyecto_or_403(request, proyecto_id)
@@ -176,6 +236,7 @@ def gasto_add(request, proyecto_id):
         request.POST or None,
         proyecto=proyecto,
         presupuesto=presupuesto,
+        equipo=proyecto.equipo.all(),
     )
     success_url = _detail_url(presupuesto.pk) if presupuesto else _proyecto_presupuestos_url(proyecto)
     action_url = reverse('presupuestos:gasto_add', args=[proyecto.pk])
@@ -283,6 +344,7 @@ def rechazar(request, pk):
     return redirect(next_url)
 
 
+@require_admin
 @require_http_methods(['GET', 'POST'])
 def factura_add(request, proyecto_id):
     proyecto = _get_proyecto_or_403(request, proyecto_id)
@@ -322,3 +384,78 @@ def factura_add(request, proyecto_id):
         multipart=True,
         extra=extra,
     )
+
+
+@require_admin
+@require_POST
+def pct_empresa_save(request, pk):
+    presupuesto = _get_presupuesto_or_403(request, pk)
+    form = PctEmpresaForm(request.POST, instance=presupuesto)
+    if form.is_valid():
+        form.save()
+        messages.success(request, '% empresa actualizado.')
+    else:
+        messages.error(request, 'No se pudo guardar el % empresa.')
+    return redirect('presupuestos:detail', presupuesto_id=pk)
+
+
+@require_admin
+@require_http_methods(['GET', 'POST'])
+def pago_add(request, presupuesto_id):
+    presupuesto = _get_presupuesto_or_403(request, presupuesto_id)
+    equipo = presupuesto.proyecto.equipo.all()
+    form = PagoEmpleadoForm(request.POST or None, equipo=equipo)
+    back = _detail_url(presupuesto.pk)
+    if request.method == 'POST' and form.is_valid():
+        pago = form.save(commit=False)
+        pago.presupuesto = presupuesto
+        pago.save()
+        messages.success(request, 'Pago a empleado registrado.')
+        return modal_success(request, back)
+    return modal_form(
+        request,
+        title='Pago a empleado',
+        form=form,
+        action_url=reverse('presupuestos:pago_add', args=[presupuesto.pk]),
+        extra={'cancel_url': back, 'presupuesto': presupuesto},
+    )
+
+
+@require_admin
+@require_http_methods(['GET', 'POST'])
+def pago_edit(request, pk):
+    pago = get_object_or_404(
+        PagoEmpleado.objects.select_related('presupuesto__proyecto'),
+        pk=pk,
+    )
+    if not pago.presupuesto.proyecto.user_has_access(request.user):
+        raise PermissionDenied
+    equipo = pago.presupuesto.proyecto.equipo.all()
+    form = PagoEmpleadoForm(request.POST or None, instance=pago, equipo=equipo)
+    back = _detail_url(pago.presupuesto_id)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Pago a empleado actualizado.')
+        return modal_success(request, back)
+    return modal_form(
+        request,
+        title='Editar pago a empleado',
+        form=form,
+        action_url=reverse('presupuestos:pago_edit', args=[pk]),
+        extra={'cancel_url': back, 'presupuesto': pago.presupuesto},
+    )
+
+
+@require_admin
+@require_POST
+def pago_delete(request, pk):
+    pago = get_object_or_404(
+        PagoEmpleado.objects.select_related('presupuesto__proyecto'),
+        pk=pk,
+    )
+    if not pago.presupuesto.proyecto.user_has_access(request.user):
+        raise PermissionDenied
+    presupuesto_id = pago.presupuesto_id
+    pago.delete()
+    messages.success(request, 'Pago a empleado eliminado.')
+    return redirect('presupuestos:detail', presupuesto_id=presupuesto_id)

@@ -33,6 +33,9 @@
     if (window.MatrizCostos && typeof window.MatrizCostos.init === 'function') {
       window.MatrizCostos.init(form);
     }
+    if (typeof window.nxInitSelect2 === 'function') {
+      window.nxInitSelect2(body);
+    }
   }
 
   function openModal(url, titleHint) {

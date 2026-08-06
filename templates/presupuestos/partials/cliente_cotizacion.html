@@ -1,0 +1,32 @@
+{% load l10n %}
+{% if presupuesto.estado == 'enviado' %}
+<div class="x_panel">
+  <h4>Responder propuesta</h4>
+  <form method="post" action="{% url 'presupuestos:aceptar' presupuesto.pk %}" style="display:inline">{% csrf_token %}
+    <button class="btn btn-success" type="submit">Aceptar presupuesto</button>
+  </form>
+  <form method="post" action="{% url 'presupuestos:rechazar' presupuesto.pk %}" class="form-inline" style="display:inline-block;margin-left:10px">
+    {% csrf_token %}
+    <input type="text" name="comentario" class="form-control" placeholder="Motivo / comentario" style="width:260px" required>
+    <button class="btn btn-danger" type="submit">Rechazar</button>
+  </form>
+</div>
+{% endif %}
+<div class="x_panel">
+  <div class="x_title"><h2>Cotización</h2><div class="clearfix"></div></div>
+  <p><strong>{{ presupuesto.titulo }}</strong> · {{ presupuesto.get_estado_display }}</p>
+  <table class="table table-striped">
+    <thead><tr><th>Referencia</th><th>Cant.</th><th>Valor unit.</th><th>Importe</th></tr></thead>
+    <tbody>
+    {% for item in presupuesto.items.all %}
+      <tr>
+        <td>{{ item.referencia|default:item.descripcion }}</td>
+        <td>{{ item.cantidad|unlocalize }}</td>
+        <td>${{ item.neto_unidad|floatformat:0 }}</td>
+        <td>${{ item.subtotal|floatformat:0 }}</td>
+      </tr>
+    {% empty %}<tr><td colspan="4">Sin ítems</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  <p><strong>Total:</strong> ${{ presupuesto.total_items|floatformat:0 }}</p>
+</div>

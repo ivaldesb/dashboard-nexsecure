@@ -3,8 +3,29 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import models
 
+from proyectos.models import GENERALIDADES_DEFAULT
+
 ZERO = Decimal('0')
 HUNDRED = Decimal('100')
+
+
+def _max_numero_presupuesto():
+    """Máximo número numérico entre presupuestos (y códigos de proyecto)."""
+    max_num = 0
+    for n in Presupuesto.objects.exclude(numero='').values_list('numero', flat=True):
+        if n and str(n).isdigit():
+            max_num = max(max_num, int(n))
+    # evitar colisión con códigos de proyecto futuros / existentes
+    from proyectos.models import Proyecto
+
+    for c in Proyecto.objects.exclude(codigo='').values_list('codigo', flat=True):
+        if c and str(c).isdigit():
+            max_num = max(max_num, int(c))
+    return max_num
+
+
+def next_numero_presupuesto():
+    return str(_max_numero_presupuesto() + 1)
 
 
 class Presupuesto(models.Model):
@@ -27,10 +48,14 @@ class Presupuesto(models.Model):
     ]
 
     proyecto = models.ForeignKey('proyectos.Proyecto', on_delete=models.CASCADE, related_name='presupuestos')
+    numero = models.CharField('Nº presupuesto', max_length=32, unique=True, blank=True)
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default=INICIAL)
     titulo = models.CharField(max_length=200)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default=BORRADOR)
     notas = models.TextField(blank=True)
+    generalidades = models.TextField(blank=True, default=GENERALIDADES_DEFAULT)
+    descuento_pct = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    pct_empresa = models.DecimalField(max_digits=6, decimal_places=2, default=20)
     incidencia = models.ForeignKey(
         'incidencias.Incidencia',
         null=True,
@@ -48,11 +73,51 @@ class Presupuesto(models.Model):
         ordering = ['tipo', '-created_at']
 
     def __str__(self):
-        return self.titulo
+        return f'#{self.numero or self.pk} — {self.titulo}'
+
+    def assign_numero(self):
+        """Inicial = código del proyecto; adicional = último Nº ppto + 1."""
+        if (self.numero or '').strip():
+            return
+        if self.tipo == self.INICIAL and self.proyecto_id:
+            codigo = (self.proyecto.codigo or '').strip()
+            if codigo and not Presupuesto.objects.filter(numero=codigo).exclude(pk=self.pk).exists():
+                self.numero = codigo
+                return
+        self.numero = next_numero_presupuesto()
+
+    def save(self, *args, **kwargs):
+        if not (self.numero or '').strip():
+            self.assign_numero()
+        super().save(*args, **kwargs)
 
     @property
     def total_items(self):
         return sum((item.subtotal for item in self.items.all()), ZERO)
+
+    def totales_cotizacion(self, iva_rate=None):
+        """SUB NETO / descuento / neto / IVA / total (vista cotización)."""
+        if iva_rate is None:
+            iva_rate = Decimal(str(getattr(settings, 'FINANZAS_IVA_RATE', '0.19')))
+        else:
+            iva_rate = Decimal(str(iva_rate))
+        sub_neto = self.total_items
+        desc_pct = self._d_descuento()
+        descuento = (sub_neto * desc_pct / HUNDRED).quantize(Decimal('1'))
+        neto = sub_neto - descuento
+        iva = (neto * iva_rate).quantize(Decimal('1'))
+        return {
+            'sub_neto': sub_neto.quantize(Decimal('1')),
+            'descuento_pct': desc_pct,
+            'descuento': descuento,
+            'neto': neto.quantize(Decimal('1')),
+            'iva_pct': (iva_rate * HUNDRED).quantize(Decimal('1')),
+            'iva': iva,
+            'total': (neto + iva).quantize(Decimal('1')),
+        }
+
+    def _d_descuento(self):
+        return self.descuento_pct if self.descuento_pct is not None else ZERO
 
 
 class PresupuestoItem(models.Model):
@@ -77,6 +142,9 @@ class PresupuestoItem(models.Model):
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default=MATERIAL)
     referencia = models.CharField(max_length=255, blank=True)
     descripcion = models.CharField(max_length=255, blank=True)
+    ubicacion = models.CharField(max_length=120, blank=True)
+    tipologia = models.CharField('tipología', max_length=120, blank=True)
+    caracteristicas = models.CharField('características', max_length=255, blank=True)
     cantidad = models.DecimalField(max_digits=12, decimal_places=2, default=1)
     precio_unitario = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     costo_insumo = models.DecimalField(max_digits=14, decimal_places=2, default=0)
@@ -218,6 +286,7 @@ class FacturaBoleta(models.Model):
     )
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default=FACTURA)
     numero = models.CharField(max_length=64)
+    proveedor = models.CharField(max_length=200, blank=True)
     fecha = models.DateField()
     monto_neto = models.DecimalField(max_digits=14, decimal_places=2)
     monto_iva = models.DecimalField(max_digits=14, decimal_places=2, default=0)
@@ -246,6 +315,26 @@ class FacturaBoleta(models.Model):
 
 
 class Gasto(models.Model):
+    TIPO_MATERIALES = 'materiales'
+    TIPO_TRANSPORTE = 'transporte'
+    TIPO_MANO_OBRA = 'mano_obra'
+    TIPO_OTROS = 'otros'
+    TIPO_CHOICES = [
+        (TIPO_MATERIALES, 'Materiales'),
+        (TIPO_TRANSPORTE, 'Transporte'),
+        (TIPO_MANO_OBRA, 'Mano de obra'),
+        (TIPO_OTROS, 'Otros'),
+    ]
+
+    PAGADO_CAJA = 'caja'
+    PAGADO_EMPRESA = 'empresa'
+    PAGADO_USUARIO = 'usuario'
+    PAGADO_POR_CHOICES = [
+        (PAGADO_CAJA, 'Caja del proyecto'),
+        (PAGADO_EMPRESA, 'Empresa'),
+        (PAGADO_USUARIO, 'Usuario'),
+    ]
+
     proyecto = models.ForeignKey('proyectos.Proyecto', on_delete=models.CASCADE, related_name='gastos')
     presupuesto = models.ForeignKey(
         Presupuesto,
@@ -263,9 +352,19 @@ class Gasto(models.Model):
         related_name='gastos',
         verbose_name='factura / boleta',
     )
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default=TIPO_OTROS)
     descripcion = models.CharField(max_length=255)
     monto = models.DecimalField(max_digits=14, decimal_places=2)
     fecha = models.DateField()
+    pagado_por_tipo = models.CharField(max_length=20, choices=PAGADO_POR_CHOICES, default=PAGADO_CAJA)
+    # ponytail: solo relevante si pagado_por_tipo=usuario; views/forms validan
+    pagado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='gastos_pagados',
+    )
     creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -274,3 +373,41 @@ class Gasto(models.Model):
 
     def __str__(self):
         return f'{self.descripcion} (${self.monto})'
+
+
+class PagoEmpleado(models.Model):
+    QUIEN_CAJA = 'caja'
+    QUIEN_EMPRESA = 'empresa'
+    QUIEN_USUARIO = 'usuario'
+    QUIEN_CHOICES = [
+        (QUIEN_CAJA, 'Caja del proyecto'),
+        (QUIEN_EMPRESA, 'Empresa'),
+        (QUIEN_USUARIO, 'Usuario'),
+    ]
+
+    presupuesto = models.ForeignKey(Presupuesto, on_delete=models.CASCADE, related_name='pagos_empleados')
+    empleado = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='pagos_presupuesto',
+    )
+    porcentaje_pago = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    anticipo = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    quien_anticipo_tipo = models.CharField(max_length=20, choices=QUIEN_CHOICES, default=QUIEN_CAJA)
+    # ponytail: solo relevante si quien_anticipo_tipo=usuario
+    quien_anticipo = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='anticipos_pagados',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['empleado_id']
+        unique_together = [('presupuesto', 'empleado')]
+
+    def __str__(self):
+        return f'{self.empleado} — {self.porcentaje_pago}%'

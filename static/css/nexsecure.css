@@ -853,3 +853,382 @@ body.nx-app .modal-backdrop.in {
     margin-left: 4px;
   }
 }
+
+/* Detalle proyecto — cotización */
+body.nx-app .nx-project-tabs {
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--nx-line);
+  background: var(--nx-surface);
+  border-radius: var(--nx-radius) var(--nx-radius) 0 0;
+  padding: 8px 12px 0;
+}
+
+body.nx-app .nx-project-tabs > li > a {
+  color: var(--nx-muted);
+  border-radius: 8px 8px 0 0;
+  font-weight: 550;
+}
+
+body.nx-app .nx-project-tabs > li.active > a,
+body.nx-app .nx-project-tabs > li.active > a:hover {
+  color: var(--nx-accent);
+  border-color: var(--nx-line) var(--nx-line) transparent;
+  font-weight: 650;
+}
+
+body.nx-app .nx-project-tabs .nx-tab-pdf {
+  color: var(--nx-ok) !important;
+}
+
+body.nx-app .nx-coti-panel {
+  border-radius: var(--nx-radius);
+  box-shadow: var(--nx-shadow);
+}
+
+body.nx-app .nx-coti-num {
+  color: var(--nx-accent);
+  margin-top: 0;
+  font-weight: 700;
+}
+
+body.nx-app .nx-coti-obra {
+  color: var(--nx-accent);
+  font-size: 18px;
+  font-weight: 650;
+  margin-top: 0;
+}
+
+body.nx-app .nx-section-title {
+  margin-top: 20px;
+  margin-bottom: 12px;
+  font-weight: 650;
+  color: var(--nx-ink-soft);
+}
+
+body.nx-app .nx-coti-table thead tr {
+  background: var(--nx-accent);
+  color: #fff;
+}
+
+body.nx-app .nx-coti-table thead th {
+  border-color: #0d5f59 !important;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+body.nx-app .nx-coti-actions .btn {
+  margin: 0 2px;
+}
+
+body.nx-app .nx-coti-actions-bar {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--nx-line);
+}
+
+body.nx-app .nx-side-label {
+  font-weight: 650;
+  margin: 14px 0 6px;
+  color: var(--nx-ink-soft);
+}
+
+body.nx-app .nx-equipo-list > li {
+  margin-bottom: 10px;
+}
+
+body.nx-app .nx-estado-badge {
+  display: inline-block;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+body.nx-app .nx-progress {
+  height: 22px;
+  border-radius: 8px;
+  background: #e2e8f0;
+  margin-bottom: 8px;
+}
+
+body.nx-app .nx-progress .progress-bar {
+  background: linear-gradient(90deg, var(--nx-accent), var(--nx-accent-hover));
+  line-height: 22px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+body.nx-app .nx-totales th {
+  width: 60%;
+}
+
+body.nx-app .nx-totales-total th,
+body.nx-app .nx-totales-total td {
+  background: var(--nx-accent) !important;
+  color: #fff !important;
+  font-size: 16px;
+}
+
+body.nx-app .nx-resumen-card {
+  margin-top: 18px;
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  border-radius: 12px;
+  padding: 18px;
+  color: #fff;
+  box-shadow: var(--nx-shadow);
+}
+
+body.nx-app .nx-resumen-card h5 {
+  margin: 0 0 10px;
+  color: #fff;
+  font-weight: 700;
+}
+
+body.nx-app .nx-resumen-inner {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+body.nx-app .nx-resumen-inner p {
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+body.nx-app .nx-resumen-inner span {
+  float: right;
+  font-weight: 650;
+}
+
+body.nx-app .nx-resumen-inner .nx-diff {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+body.nx-app .nx-resumen-inner .nx-diff span {
+  color: #bbf7d0;
+  font-size: 18px;
+}
+
+body.nx-app .nx-resumen-card .btn-default {
+  background: #fff;
+  border: 0;
+  color: var(--nx-accent);
+  font-weight: 600;
+}
+
+body.nx-app .nx-change-item {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+body.nx-app .nx-rentabilidad {
+  box-shadow: none;
+  border: 1px solid var(--nx-line);
+}
+
+/* Gestión financiera presupuesto (admin) */
+body.nx-app .nx-pago-card {
+  background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+  border-radius: 12px;
+  padding: 16px;
+  color: #fff;
+  box-shadow: var(--nx-shadow);
+  min-height: 180px;
+}
+
+body.nx-app .nx-pago-card h5 {
+  margin: 0 0 12px;
+  color: #fff;
+  font-weight: 700;
+}
+
+body.nx-app .nx-pago-card p {
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+body.nx-app .nx-pago-plus { color: #bbf7d0; }
+body.nx-app .nx-pago-minus { color: #fecaca; }
+
+body.nx-app .nx-pago-total {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+body.nx-app .nx-pago-total small {
+  display: block;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+
+body.nx-app .nx-pago-total strong {
+  font-size: 20px;
+}
+
+body.nx-app .nx-fin-card {
+  border-radius: 12px;
+  padding: 18px;
+  color: #fff;
+  box-shadow: var(--nx-shadow);
+}
+
+body.nx-app .nx-fin-card h5 {
+  margin: 0 0 12px;
+  color: #fff;
+  font-weight: 700;
+}
+
+body.nx-app .nx-fin-card p {
+  margin: 6px 0;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+body.nx-app .nx-fin-card p span {
+  float: right;
+  font-weight: 650;
+}
+
+body.nx-app .nx-fin-ingresos {
+  background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
+}
+
+body.nx-app .nx-fin-utilidad {
+  background: linear-gradient(135deg, #0e7490 0%, #06b6d4 100%);
+}
+
+body.nx-app .nx-fin-verif {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  margin-top: 8px;
+}
+
+body.nx-app .nx-fin-iva {
+  background: linear-gradient(135deg, #334155 0%, #475569 100%);
+}
+
+body.nx-app .nx-fin-foot {
+  margin-top: 14px !important;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 16px !important;
+  font-weight: 700;
+}
+
+body.nx-app .nx-fin-suma {
+  margin-top: 16px !important;
+  font-size: 20px !important;
+  font-weight: 700;
+  color: #86efac;
+}
+
+/* M2M picker: disponibles arriba / asignados abajo */
+body.nx-app select.nx-m2m-picker,
+body.nx-app select.nx-m2m-native {
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+body.nx-app .nx-m2m {
+  border: 1px solid var(--nx-line);
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 12px;
+  margin-top: 4px;
+}
+
+body.nx-app .nx-m2m-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--nx-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+}
+
+body.nx-app .nx-m2m-search {
+  margin-bottom: 8px;
+}
+
+body.nx-app .nx-m2m-available {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--nx-line);
+  border-radius: 10px;
+}
+
+body.nx-app .nx-m2m-option,
+body.nx-app .nx-m2m-none {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+
+body.nx-app .nx-m2m-option:last-child,
+body.nx-app .nx-m2m-none:last-child {
+  border-bottom: 0;
+}
+
+body.nx-app .nx-m2m-option:hover {
+  background: #f0fdfa;
+}
+
+body.nx-app .nx-m2m-selected {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body.nx-app .nx-m2m-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--nx-accent-soft);
+  border: 1px solid #99f6e4;
+  color: var(--nx-ink);
+  border-radius: 999px;
+  padding: 6px 8px 6px 12px;
+  font-size: 13px;
+  font-weight: 550;
+}
+
+body.nx-app .nx-m2m-remove {
+  border: 0;
+  background: #0f766e;
+  color: #fff;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  line-height: 20px;
+  font-size: 16px;
+  padding: 0;
+  cursor: pointer;
+}
+
+body.nx-app .nx-m2m-remove:hover {
+  background: #b91c1c;
+}
+
+body.nx-app .nx-m2m-empty {
+  margin: 0;
+  font-size: 13px;
+}
